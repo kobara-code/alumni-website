@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}공지사항 - 동문회{% endblock %}
+
+{% block content %}
+<h2>공지사항</h2>
+
+<div class="row">
+    <div class="col-12">
+        {% for notice in notices %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{{ url_for('notice_detail', notice_id=notice[0]) }}" class="text-decoration-none">
+                        {{ notice[1] }}
+                    </a>
+                </h5>
+                <p class="card-text">{{ notice[2][:100] }}{% if notice[2]|length > 100 %}...{% endif %}</p>
+                <small class="text-muted">{{ notice[4] }} | {{ notice[3] }}</small>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not notices %}
+        <div class="alert alert-info">등록된 공지사항이 없습니다.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

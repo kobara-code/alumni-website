@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}동문회 웹사이트{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">금호중앙동문회</a>
+            {% if session.user_id %}
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('directory') }}">동문 수첩</a>
+                <a class="nav-link" href="{{ url_for('notices') }}">공지사항</a>
+                <a class="nav-link" href="{{ url_for('finances') }}">회계</a>
+                {% if session.is_admin or session.is_student %}
+                <a class="nav-link" href="{{ url_for('events') }}">행사 참석</a>
+                {% endif %}
+                <a class="nav-link" href="{{ url_for('profile') }}">내 정보</a>
+                {% if session.is_admin %}
+                <a class="nav-link" href="{{ url_for('admin') }}">관리자</a>
+                {% endif %}
+                <a class="nav-link" href="{{ url_for('logout') }}">로그아웃</a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

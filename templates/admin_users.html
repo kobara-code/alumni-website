@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}동문 관리 - 금호중앙동문회{% endblock %}
+
+{% block content %}
+<h2>동문 관리</h2>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>신규 동문 등록</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('add_user') }}">
+            <div class="row mb-2">
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="name" placeholder="이름" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="graduation_year" placeholder="졸업기수" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="phone" placeholder="전화번호">
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_student" name="is_student">
+                        <label class="form-check-label" for="is_student">재학생</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary">등록</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="work_address" placeholder="직장 주소">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="home_address" placeholder="거주지 주소">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5>등록된 동문 목록</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th>기수</th>
+                        <th>전화번호</th>
+                        <th>직장주소</th>
+                        <th>거주지</th>
+                        <th>권한</th>
+                        <th>전화공개</th>
+                        <th>주소공개</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user[1] }}</td>
+                        <td>{{ user[3] }}기</td>
+                        <td>{{ user[4] | format_phone }}</td>
+                        <td>{{ user[5] or '-' }}</td>
+                        <td>{{ user[6] or '-' }}</td>
+                        <td>
+                            {% if user[7] %}
+                                <span class="badge bg-danger">관리자</span>
+                            {% elif user[8] %}
+                                <span class="badge bg-warning">재학생</span>
+                            {% else %}
+                                <span class="badge bg-secondary">일반</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user[9] %}
+                                <span class="text-success">공개</span>
+                            {% else %}
+                                <span class="text-muted">비공개</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            직장: {% if user[10] %}<span class="text-success">공개</span>{% else %}<span class="text-muted">비공개</span>{% endif %}<br>
+                            거주지: {% if user[11] %}<span class="text-success">공개</span>{% else %}<span class="text-muted">비공개</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if user[1] != '관리자' %}
+                            <button class="btn btn-sm btn-primary" onclick="editUser({{ user[0] }}, '{{ user[1] }}', {{ user[3] }}, '{{ user[4] or '' }}', '{{ user[5] or '' }}', '{{ user[6] or '' }}', {{ user[8] }})">수정</button>
+                            <form method="POST" action="{{ url_for('delete_user', user_id=user[0]) }}" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                                <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 동문 수정 모달 -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">동문 정보 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">이름</label>
+                        <input type="text" class="form-control" name="name" id="edit_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">졸업기수</label>
+                        <input type="number" class="form-control" name="graduation_year" id="edit_year" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">전화번호</label>
+                        <input type="text" class="form-control" name="phone" id="edit_phone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">직장주소</label>
+                        <input type="text" class="form-control" name="work_address" id="edit_work">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">거주지주소</label>
+                        <input type="text" class="form-control" name="home_address" id="edit_home">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_student" id="edit_student">
+                            <label class="form-check-label">재학생</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitEdit()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function editUser(id, name, year, phone, work, home, isStudent) {
+    document.getElementById('editForm').action = '/admin/edit_user/' + id;
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_year').value = year;
+    document.getElementById('edit_phone').value = phone;
+    document.getElementById('edit_work').value = work;
+    document.getElementById('edit_home').value = home;
+    document.getElementById('edit_student').checked = isStudent == 1;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+function submitEdit() {
+    document.getElementById('editForm').submit();
+}
+</script>
+
+<div class="mt-3">
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">관리자 페이지로</a>
+</div>
+{% endblock %}

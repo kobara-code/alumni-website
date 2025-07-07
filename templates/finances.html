@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}회계 현황 - 동문회{% endblock %}
+
+{% block content %}
+<h2>회계 현황</h2>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5>총 수입</h5>
+                <h3>{{ "{:,}".format(total_income) }}원</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h5>총 지출</h5>
+                <h3>{{ "{:,}".format(total_expense) }}원</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5>잔액</h5>
+                <h3>{{ "{:,}".format(balance) }}원</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if session.is_admin %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>회계 내역 추가</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('add_finance') }}">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-select" name="type" required>
+                        <option value="">구분 선택</option>
+                        <option value="income">수입</option>
+                        <option value="expense">지출</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="description" placeholder="내역 설명" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="amount" placeholder="금액" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary">추가</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <h5>회계 내역</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>날짜</th>
+                        <th>구분</th>
+                        <th>내역</th>
+                        <th>금액</th>
+                        <th>등록자</th>
+                        {% if session.is_admin %}
+                        <th>작업</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for finance in finances %}
+                    <tr>
+                        <td>{{ finance[4][:10] }}</td>
+                        <td>
+                            {% if finance[1] == 'income' %}
+                                <span class="badge bg-success">수입</span>
+                            {% else %}
+                                <span class="badge bg-danger">지출</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ finance[2] }}</td>
+                        <td>
+                            {% if finance[1] == 'income' %}
+                                +{{ "{:,}".format(finance[3]) }}원
+                            {% else %}
+                                -{{ "{:,}".format(finance[3]) }}원
+                            {% endif %}
+                        </td>
+                        <td>{{ finance[5] }}</td>
+                        {% if session.is_admin %}
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editFinance({{ finance[0] }}, '{{ finance[1] }}', '{{ finance[2] }}', {{ finance[3] }})">수정</button>
+                            <form method="POST" action="{{ url_for('delete_finance', finance_id=finance[0]) }}" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                                <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if not finances %}
+        <div class="alert alert-info">등록된 회계 내역이 없습니다.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if bank_info_public or session.is_admin %}
+<div class="mt-4">
+    <div class="alert alert-info">
+        <h6>후원 계좌 안내</h6>
+        <p class="mb-0">
+            <strong>은행:</strong> {{ bank_info.get('bank_name', '국민은행') }}<br>
+            <strong>계좌번호:</strong> {{ bank_info.get('account_number', '123-456-789012') }}<br>
+            <strong>예금주:</strong> {{ bank_info.get('account_holder', '금호중앙동문회') }}
+        </p>
+    </div>
+</div>
+<!-- 회계 수정 모달 -->
+<div class="modal fade" id="editFinanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">회계 내역 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editFinanceForm" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">구분</label>
+                        <select class="form-select" name="type" id="edit_type" required>
+                            <option value="income">수입</option>
+                            <option value="expense">지출</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">내역</label>
+                        <input type="text" class="form-control" name="description" id="edit_description" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">금액</label>
+                        <input type="number" class="form-control" name="amount" id="edit_amount" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitFinanceEdit()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function editFinance(id, type, description, amount) {
+    document.getElementById('editFinanceForm').action = '/admin/edit_finance/' + id;
+    document.getElementById('edit_type').value = type;
+    document.getElementById('edit_description').value = description;
+    document.getElementById('edit_amount').value = amount;
+    new bootstrap.Modal(document.getElementById('editFinanceModal')).show();
+}
+
+function submitFinanceEdit() {
+    document.getElementById('editFinanceForm').submit();
+}
+</script>
+{% endif %}
+{% endblock %}

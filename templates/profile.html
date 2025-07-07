@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}내 정보 - 동문회{% endblock %}
+
+{% block content %}
+<h2>내 정보</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_profile') }}">
+                    <div class="mb-3">
+                        <label class="form-label">이름</label>
+                        <input type="text" class="form-control" value="{{ user[1] }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">졸업 기수</label>
+                        <input type="text" class="form-control" value="{{ user[3] }}기" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">전화번호</label>
+                        <input type="text" class="form-control" id="phone" name="phone" value="{{ user[4] or '' }}">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="phone_public" name="phone_public" {% if user[9] %}checked{% endif %}>
+                            <label class="form-check-label" for="phone_public">
+                                전화번호 공개
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="work_address" class="form-label">직장 주소</label>
+                        <textarea class="form-control" id="work_address" name="work_address" rows="2">{{ user[5] or '' }}</textarea>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="work_address_public" name="work_address_public" {% if user[10] %}checked{% endif %}>
+                            <label class="form-check-label" for="work_address_public">
+                                직장 주소 공개
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="home_address" class="form-label">거주지 주소</label>
+                        <textarea class="form-control" id="home_address" name="home_address" rows="2">{{ user[6] or '' }}</textarea>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="home_address_public" name="home_address_public" {% if user[11] %}checked{% endif %}>
+                            <label class="form-check-label" for="home_address_public">
+                                거주지 주소 공개
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">새 비밀번호 (변경시에만 입력)</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password">
+                    </div>
+                    <button type="submit" class="btn btn-primary">정보 수정</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

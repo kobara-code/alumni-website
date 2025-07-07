@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}시스템 설정 - 금호중앙동문회{% endblock %}
+
+{% block content %}
+<h2>시스템 설정</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>회계 및 계좌 설정</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_settings') }}">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="finance_public" name="finance_public" 
+                                   {% if settings.get('finance_public') == '1' %}checked{% endif %}>
+                            <label class="form-check-label" for="finance_public">
+                                <strong>회계 페이지 공개</strong> (체크 해제시 관리자만 접근 가능)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="finance_details_public" name="finance_details_public" 
+                                   {% if settings.get('finance_details_public') == '1' %}checked{% endif %}>
+                            <label class="form-check-label" for="finance_details_public">
+                                <strong>회계 내역 공개</strong> (체크 해제시 관리자만 상세 내역 확인 가능)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="bank_info_public" name="bank_info_public" 
+                                   {% if settings.get('bank_info_public') == '1' %}checked{% endif %}>
+                            <label class="form-check-label" for="bank_info_public">
+                                <strong>계좌 정보 공개</strong> (체크 해제시 관리자만 계좌 정보 확인 가능)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>후원 계좌 정보</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="bank_name" class="form-label">은행명</label>
+                                <input type="text" class="form-control" id="bank_name" name="bank_name" 
+                                       value="{{ settings.get('bank_name', '') }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="account_number" class="form-label">계좌번호</label>
+                                <input type="text" class="form-control" id="account_number" name="account_number" 
+                                       value="{{ settings.get('account_number', '') }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="account_holder" class="form-label">예금주</label>
+                                <input type="text" class="form-control" id="account_holder" name="account_holder" 
+                                       value="{{ settings.get('account_holder', '') }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">설정 저장</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>변경 요청 관리</h5>
+            </div>
+            <div class="card-body">
+                {% for request in change_requests %}
+                <div class="card mb-2">
+                    <div class="card-body p-2">
+                        <small class="text-muted">{{ request[5] }}님 요청</small>
+                        <p class="mb-1"><strong>{{ request[2] }}</strong> 변경</p>
+                        <p class="mb-1">{{ request[3] }} → {{ request[4] }}</p>
+                        <form method="POST" action="{{ url_for('approve_change', request_id=request[0]) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-success">승인</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not change_requests %}
+                <div class="alert alert-info">대기 중인 변경 요청이 없습니다.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">관리자 페이지로</a>
+    <a href="{{ url_for('admin_logs') }}" class="btn btn-info">활동 로그 보기</a>
+    <a href="{{ url_for('admin_gallery') }}" class="btn btn-warning">동문회 사진 관리</a>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded">
+    <h1 class="display-4">금호중앙동문회에 오신 것을 환영합니다!</h1>
+    <p class="lead">{{ session.user_name }}님, 안녕하세요.</p>
+    <hr class="my-4">
+    <p>동문 수첩을 통해 동문들의 연락처를 확인하고, 공지사항을 확인하세요.</p>
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">동문 수첩</h5>
+                    <p class="card-text">동문들의 연락처와 정보를 확인하세요.</p>
+                    <a href="{{ url_for('directory') }}" class="btn btn-primary">바로가기</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">공지사항</h5>
+                    <p class="card-text">최신 소식과 공지사항을 확인하세요.</p>
+                    <a href="{{ url_for('notices') }}" class="btn btn-primary">바로가기</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">회계 현황</h5>
+                    <p class="card-text">동문회 회비 및 지출 내역을 확인하세요.</p>
+                    <a href="{{ url_for('finances') }}" class="btn btn-primary">바로가기</a>
+                </div>
+            </div>
+        </div>
+        {% if session.is_admin or session.is_student %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">행사 참석 관리</h5>
+                    <p class="card-text">동문들의 행사 참석 상태를 관리하세요.</p>
+                    <a href="{{ url_for('events') }}" class="btn btn-primary">바로가기</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if gallery_images %}
+    <div class="mt-4">
+        <h4>동문회 사진</h4>
+        <div class="row">
+            {% for image in gallery_images %}
+            <div class="col-md-2 mb-3">
+                <img src="{{ url_for('static', filename='uploads/' + image[1]) }}" class="img-fluid rounded" alt="{{ image[2] }}" style="height: 120px; object-fit: cover; width: 100%;">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

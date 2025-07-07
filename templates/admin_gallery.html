@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}동문회 사진 관리 - 금호중앙동문회{% endblock %}
+
+{% block content %}
+<h2>동문회 사진 관리</h2>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>사진 업로드</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('upload_image') }}" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="images" class="form-label">사진 선택 (여러 개 가능)</label>
+                <input type="file" class="form-control" id="images" name="images" multiple accept="image/*" required>
+            </div>
+            <button type="submit" class="btn btn-primary">업로드</button>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    {% for image in images %}
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <img src="{{ url_for('static', filename='uploads/' + image[1]) }}" class="card-img-top" alt="{{ image[2] }}" style="height: 200px; object-fit: cover;">
+            <div class="card-body">
+                <p class="card-text">
+                    <small class="text-muted">
+                        {{ image[2] }}<br>
+                        {{ image[3] }} | {{ image[4][:10] }}
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not images %}
+<div class="alert alert-info">업로드된 사진이 없습니다.</div>
+{% endif %}
+
+<div class="mt-3">
+    <a href="{{ url_for('admin_settings') }}" class="btn btn-secondary">설정으로 돌아가기</a>
+</div>
+{% endblock %}

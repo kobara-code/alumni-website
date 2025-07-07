@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}행사 참석 관리 - 금호중앙동문회{% endblock %}
+
+{% block content %}
+<h2>행사 참석 관리</h2>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <form method="GET" class="d-flex">
+            <input type="text" class="form-control me-2" name="search" placeholder="이름으로 검색" value="{{ search }}">
+            <select class="form-select me-2" name="status">
+                <option value="">전체 상태</option>
+                <option value="무응답" {% if status_filter == '무응답' %}selected{% endif %}>무응답</option>
+                <option value="참석" {% if status_filter == '참석' %}selected{% endif %}>참석</option>
+                <option value="미참석" {% if status_filter == '미참석' %}selected{% endif %}>미참석</option>
+                <option value="미정" {% if status_filter == '미정' %}selected{% endif %}>미정</option>
+            </select>
+            <button type="submit" class="btn btn-outline-primary">검색</button>
+        </form>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body p-2">
+                <small>
+                    무응답: {{ status_counts.get('무응답', 0) }}명 | 
+                    참석: {{ status_counts.get('참석', 0) }}명 | 
+                    미참석: {{ status_counts.get('미참석', 0) }}명 | 
+                    미정: {{ status_counts.get('미정', 0) }}명
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>이름</th>
+                <th>기수</th>
+                <th>전화번호</th>
+                <th>직장주소</th>
+                <th>거주지</th>
+                <th>참석상태</th>
+                <th>메모</th>
+                {% if session.is_student %}
+                <th>작업</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users_events %}
+            <tr>
+                <td>{{ user[1] }}</td>
+                <td>{{ user[2] }}기</td>
+                <td>{{ user[3] | format_phone }}</td>
+                <td>{{ user[4] or '-' }}</td>
+                <td>{{ user[5] or '-' }}</td>
+                <td>
+                    <span class="badge 
+                        {% if user[6] == '참석' %}bg-success
+                        {% elif user[6] == '미참석' %}bg-danger
+                        {% elif user[6] == '미정' %}bg-warning
+                        {% else %}bg-secondary{% endif %}">
+                        {{ user[6] }}
+                    </span>
+                </td>
+                <td>{{ user[7] or '-' }}</td>
+                {% if session.is_student %}
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="showUpdateModal({{ user[0] }}, '{{ user[1] }}', '{{ user[6] }}', '{{ user[7] or '' }}')">
+                        수정
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="showChangeModal({{ user[0] }}, '{{ user[1] }}', '{{ user[3] or '' }}', '{{ user[4] or '' }}', '{{ user[5] or '' }}')">
+                        정보변경
+                    </button>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if session.is_student %}
+<!-- 참석상태 수정 모달 -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">참석상태 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateForm">
+                    <input type="hidden" id="update_user_id" name="user_id">
+                    <div class="mb-3">
+                        <label class="form-label">동문명</label>
+                        <input type="text" class="form-control" id="update_user_name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">참석상태</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="무응답">무응답</option>
+                            <option value="참석">참석</option>
+                            <option value="미참석">미참석</option>
+                            <option value="미정">미정</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">메모</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="updateAttendance()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 정보변경 요청 모달 -->
+<div class="modal fade" id="changeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">정보 변경 요청</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changeForm">
+                    <input type="hidden" id="change_user_id" name="user_id">
+                    <div class="mb-3">
+                        <label class="form-label">동문명</label>
+                        <input type="text" class="form-control" id="change_user_name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="field_name" class="form-label">변경할 항목</label>
+                        <select class="form-select" id="field_name" name="field_name" required>
+                            <option value="phone">전화번호</option>
+                            <option value="work_address">직장주소</option>
+                            <option value="home_address">거주지주소</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_value" class="form-label">새로운 값</label>
+                        <input type="text" class="form-control" id="new_value" name="new_value" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="requestChange()">요청</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showUpdateModal(userId, userName, status, notes) {
+    document.getElementById('update_user_id').value = userId;
+    document.getElementById('update_user_name').value = userName;
+    document.getElementById('status').value = status;
+    document.getElementById('notes').value = notes;
+    new bootstrap.Modal(document.getElementById('updateModal')).show();
+}
+
+function showChangeModal(userId, userName, phone, workAddr, homeAddr) {
+    document.getElementById('change_user_id').value = userId;
+    document.getElementById('change_user_name').value = userName;
+    new bootstrap.Modal(document.getElementById('changeModal')).show();
+}
+
+function updateAttendance() {
+    const formData = new FormData(document.getElementById('updateForm'));
+    
+    fetch('{{ url_for("update_attendance") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function requestChange() {
+    const formData = new FormData(document.getElementById('changeForm'));
+    
+    fetch('{{ url_for("request_change") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('변경 요청이 전송되었습니다.');
+            bootstrap.Modal.getInstance(document.getElementById('changeModal')).hide();
+        }
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

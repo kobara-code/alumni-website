@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 페이지 - 동문회{% endblock %}
+
+{% block content %}
+<h2>관리자 페이지</h2>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">동문 관리</h5>
+                <p class="card-text">동문 정보 조회 및 신규 등록</p>
+                <a href="{{ url_for('admin_users') }}" class="btn btn-primary">관리하기</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">공지사항 관리</h5>
+                <p class="card-text">공지사항 작성 및 관리</p>
+                <a href="{{ url_for('admin_notices') }}" class="btn btn-primary">관리하기</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">회계 관리</h5>
+                <p class="card-text">수입/지출 내역 관리</p>
+                <a href="{{ url_for('finances') }}" class="btn btn-primary">관리하기</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">시스템 설정</h5>
+                <p class="card-text">회계 공개 설정, 계좌 정보, 변경요청 관리</p>
+                <a href="{{ url_for('admin_settings') }}" class="btn btn-primary">설정하기</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

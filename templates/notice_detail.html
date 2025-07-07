@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{{ notice[1] }} - 동문회{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>{{ notice[1] }}</h3>
+        <small class="text-muted">{{ notice[4] }} | {{ notice[3] }}</small>
+    </div>
+    <div class="card-body">
+        <p style="white-space: pre-line;">{{ notice[2] }}</p>
+        {% if notice[3] %}
+        <div class="mt-3">
+            {% for image in notice[3].split(',') %}
+            {% if image %}
+            <img src="{{ url_for('static', filename='uploads/' + image) }}" class="img-fluid mb-2" alt="공지사항 이미지" style="max-width: 100%; margin-right: 10px;">
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <h4>댓글</h4>
+    
+    <form method="POST" action="{{ url_for('add_comment') }}" class="mb-4">
+        <input type="hidden" name="notice_id" value="{{ notice[0] }}">
+        <div class="mb-3">
+            <textarea class="form-control" name="content" rows="3" placeholder="댓글을 입력하세요..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">댓글 작성</button>
+    </form>
+    
+    {% for comment in comments %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <strong>{{ comment[2] }}</strong>
+                <div>
+                    {% set expected_author = (session.user_year + '기 ' + session.user_name) if session.user_name != '관리자' and session.user_year else session.user_name %}
+                    {% if comment[2] == expected_author %}
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editComment({{ comment[0] }}, '{{ comment[3] }}')">수정</button>
+                    {% endif %}
+                    <small class="text-muted">{{ comment[4] }}</small>
+                </div>
+            </div>
+            <p class="mt-2 mb-0" style="white-space: pre-line;" id="comment-{{ comment[0] }}">{{ comment[3] }}</p>
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% if not comments %}
+    <div class="alert alert-info">첫 번째 댓글을 작성해보세요!</div>
+    {% endif %}
+</div>
+
+<!-- 댓글 수정 모달 -->
+<div class="modal fade" id="editCommentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">댓글 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCommentForm" method="POST">
+                    <input type="hidden" name="notice_id" value="{{ notice[0] }}">
+                    <div class="mb-3">
+                        <textarea class="form-control" name="content" id="edit_comment_content" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitCommentEdit()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function editComment(id, content) {
+    document.getElementById('editCommentForm').action = '/edit_comment/' + id;
+    document.getElementById('edit_comment_content').value = content;
+    new bootstrap.Modal(document.getElementById('editCommentModal')).show();
+}
+
+function submitCommentEdit() {
+    document.getElementById('editCommentForm').submit();
+}
+</script>
+
+<div class="mt-3">
+    <a href="{{ url_for('notices') }}" class="btn btn-secondary">목록으로</a>
+</div>
+{% endblock %}
