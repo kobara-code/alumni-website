@@ -19,14 +19,15 @@ def format_phone(phone):
         return f'{digits[:3]}-{digits[3:6]}-{digits[6:]}'
     return phone
 
-app.jinja_env.filters['format_phone'] = format_phone
-
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Jinja2 필터 등록
+app.jinja_env.filters['format_phone'] = format_phone
 
 def hash_sensitive_data(data):
     if not data:
