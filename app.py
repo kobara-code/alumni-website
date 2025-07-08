@@ -876,6 +876,44 @@ def upload_image():
     
     return redirect(url_for('admin_gallery'))
 
+@app.route('/admin/delete_image/<int:image_id>', methods=['POST'])
+def delete_image(image_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    conn = sqlite3.connect('alumni.db')
+    c = conn.cursor()
+    c.execute("SELECT filename FROM gallery WHERE id = ?", (image_id,))
+    image = c.fetchone()
+    
+    if image:
+        # 파일 삭제
+        try:
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], image[0]))
+        except:
+            pass
+        
+        c.execute("DELETE FROM gallery WHERE id = ?", (image_id,))
+        log_activity('갤러리 이미지 삭제', None, image[0])
+        conn.commit()
+        flash('이미지가 삭제되었습니다.')
+    
+    conn.close()
+    return redirect(url_for('admin_gallery'))
+
+@app.route('/gallery')
+def gallery():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('alumni.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM gallery ORDER BY created_at DESC")
+    images = c.fetchall()
+    conn.close()
+    
+    return render_template('gallery.html', images=images)
+
 if __name__ == '__main__':
     init_db()
     port = int(os.environ.get('PORT', 5000))

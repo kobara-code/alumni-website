@@ -3,57 +3,133 @@
 {% block title %}내 정보 - 동문회{% endblock %}
 
 {% block content %}
-<h2>내 정보</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-person text-primary me-2"></i>내 정보
+    </h2>
+</div>
 
 <div class="row">
-    <div class="col-md-8">
+    <div class="col-lg-8 col-md-10">
         <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pencil me-2"></i>개인정보 수정
+                </h5>
+            </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('update_profile') }}">
-                    <div class="mb-3">
-                        <label class="form-label">이름</label>
-                        <input type="text" class="form-control" value="{{ user[1] }}" readonly>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="bi bi-person me-1"></i>이름
+                            </label>
+                            <input type="text" class="form-control" value="{{ user[1] }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="bi bi-mortarboard me-1"></i>졸업 기수
+                            </label>
+                            <input type="text" class="form-control" value="{{ user[3] }}기" readonly>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">졸업 기수</label>
-                        <input type="text" class="form-control" value="{{ user[3] }}기" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">전화번호</label>
-                        <input type="text" class="form-control" id="phone" name="phone" value="{{ user[4] or '' }}">
+                    
+                    <div class="mb-3 mt-3">
+                        <label for="phone" class="form-label">
+                            <i class="bi bi-telephone me-1"></i>전화번호
+                        </label>
+                        <input type="text" class="form-control" id="phone" name="phone" 
+                               value="{{ user[4] or '' }}" placeholder="전화번호를 입력하세요">
                         <div class="form-check mt-2">
-                            <input class="form-check-input" type="checkbox" id="phone_public" name="phone_public" {% if user[9] %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" id="phone_public" 
+                                   name="phone_public" {% if user[9] %}checked{% endif %}>
                             <label class="form-check-label" for="phone_public">
-                                전화번호 공개
+                                <i class="bi bi-eye me-1"></i>전화번호 공개
                             </label>
                         </div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="work_address" class="form-label">직장 주소</label>
-                        <textarea class="form-control" id="work_address" name="work_address" rows="2">{{ user[5] or '' }}</textarea>
+                        <label for="work_address" class="form-label">
+                            <i class="bi bi-building me-1"></i>직장 주소
+                        </label>
+                        <textarea class="form-control" id="work_address" name="work_address" 
+                                  rows="2" placeholder="직장 주소를 입력하세요">{{ user[5] or '' }}</textarea>
                         <div class="form-check mt-2">
-                            <input class="form-check-input" type="checkbox" id="work_address_public" name="work_address_public" {% if user[10] %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" id="work_address_public" 
+                                   name="work_address_public" {% if user[10] %}checked{% endif %}>
                             <label class="form-check-label" for="work_address_public">
-                                직장 주소 공개
+                                <i class="bi bi-eye me-1"></i>직장 주소 공개
                             </label>
                         </div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="home_address" class="form-label">거주지 주소</label>
-                        <textarea class="form-control" id="home_address" name="home_address" rows="2">{{ user[6] or '' }}</textarea>
+                        <label for="home_address" class="form-label">
+                            <i class="bi bi-house me-1"></i>거주지 주소
+                        </label>
+                        <textarea class="form-control" id="home_address" name="home_address" 
+                                  rows="2" placeholder="거주지 주소를 입력하세요">{{ user[6] or '' }}</textarea>
                         <div class="form-check mt-2">
-                            <input class="form-check-input" type="checkbox" id="home_address_public" name="home_address_public" {% if user[11] %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" id="home_address_public" 
+                                   name="home_address_public" {% if user[11] %}checked{% endif %}>
                             <label class="form-check-label" for="home_address_public">
-                                거주지 주소 공개
+                                <i class="bi bi-eye me-1"></i>거주지 주소 공개
                             </label>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="new_password" class="form-label">새 비밀번호 (변경시에만 입력)</label>
-                        <input type="password" class="form-control" id="new_password" name="new_password">
+                    
+                    <div class="mb-4">
+                        <label for="new_password" class="form-label">
+                            <i class="bi bi-key me-1"></i>새 비밀번호
+                        </label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" 
+                               placeholder="변경할 경우에만 입력하세요">
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            비밀번호를 변경하지 않으려면 비워두세요.
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">정보 수정</button>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle me-2"></i>정보 수정
+                        </button>
+                    </div>
                 </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-check me-2"></i>개인정보 공개 설정 안내
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <i class="bi bi-eye-fill text-success" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">공개</h6>
+                            <small class="text-muted">모든 동문이 확인 가능</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <i class="bi bi-people-fill text-warning" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">제한 공개</h6>
+                            <small class="text-muted">관리자와 재학생만 확인 가능</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <i class="bi bi-eye-slash-fill text-danger" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">비공개</h6>
+                            <small class="text-muted">본인만 확인 가능</small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

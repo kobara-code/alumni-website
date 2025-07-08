@@ -3,70 +3,117 @@
 {% block title %}동문 수첩 - 동문회{% endblock %}
 
 {% block content %}
-<h2>동문 수첩</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-book text-primary me-2"></i>동문 수첩
+    </h2>
+</div>
 
-<div class="row mb-3">
-    <div class="col-md-8">
-        <form method="GET" class="d-flex">
-            <input type="text" class="form-control me-2" name="search" placeholder="이름으로 검색" value="{{ search }}">
-            <select class="form-select me-2" name="year">
-                <option value="">전체 기수</option>
-                {% for year in years %}
-                <option value="{{ year }}" {% if year|string == year_filter %}selected{% endif %}>{{ year }}기</option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn btn-outline-primary">검색</button>
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="search" placeholder="이름으로 검색" value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" name="year">
+                    <option value="">전체 기수</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if year|string == year_filter %}selected{% endif %}>{{ year }}기</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i>검색
+                </button>
+            </div>
         </form>
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>이름</th>
-                <th>기수</th>
-                <th>전화번호</th>
-                <th>주소</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td>{{ user[1] }}</td>
-                <td>{{ user[3] }}기</td>
-                <td>
-                    {% if is_admin_or_student or user[9] == 1 %}
-                        {{ user[4] | format_phone }}
-                    {% else %}
-                        <span class="text-muted">비공개</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <div>
-                        <strong>직장:</strong> 
-                        {% if is_admin_or_student or user[10] == 1 %}
-                            {{ user[5] or '-' }}
-                        {% else %}
-                            <span class="text-muted">비공개</span>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <strong>거주지:</strong> 
-                        {% if is_admin_or_student or user[11] == 1 %}
-                            {{ user[6] or '-' }}
-                        {% else %}
-                            <span class="text-muted">비공개</span>
-                        {% endif %}
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-people me-2"></i>동문 목록 ({{ users|length }}명)
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if users %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th><i class="bi bi-person me-1"></i>이름</th>
+                        <th><i class="bi bi-mortarboard me-1"></i>기수</th>
+                        <th><i class="bi bi-telephone me-1"></i>전화번호</th>
+                        <th><i class="bi bi-geo-alt me-1"></i>주소</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                     style="width: 35px; height: 35px; font-size: 0.9rem;">
+                                    {{ user[1][0] }}
+                                </div>
+                                <strong>{{ user[1] }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ user[3] }}기</span>
+                        </td>
+                        <td>
+                            {% if is_admin_or_student or user[9] == 1 %}
+                                <i class="bi bi-telephone text-success me-1"></i>
+                                {{ user[4] | format_phone }}
+                            {% else %}
+                                <span class="text-muted">
+                                    <i class="bi bi-lock me-1"></i>비공개
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="small">
+                                <div class="mb-1">
+                                    <i class="bi bi-building text-primary me-1"></i>
+                                    <strong>직장:</strong> 
+                                    {% if is_admin_or_student or user[10] == 1 %}
+                                        {{ user[5] or '-' }}
+                                    {% else %}
+                                        <span class="text-muted">비공개</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <i class="bi bi-house text-success me-1"></i>
+                                    <strong>거주지:</strong> 
+                                    {% if is_admin_or_student or user[11] == 1 %}
+                                        {{ user[6] or '-' }}
+                                    {% else %}
+                                        <span class="text-muted">비공개</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-search text-muted" style="font-size: 5rem;"></i>
+            <h4 class="text-muted mt-3">검색 결과가 없습니다</h4>
+            <p class="text-muted">다른 검색어로 다시 시도해보세요.</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
-
-{% if not users %}
-<div class="alert alert-info">검색 결과가 없습니다.</div>
-{% endif %}
 {% endblock %}

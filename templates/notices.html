@@ -3,26 +3,58 @@
 {% block title %}공지사항 - 동문회{% endblock %}
 
 {% block content %}
-<h2>공지사항</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-megaphone text-primary me-2"></i>공지사항
+    </h2>
+    {% if session.is_admin %}
+    <a href="{{ url_for('admin_notices') }}" class="btn btn-primary">
+        <i class="bi bi-plus me-1"></i>공지사항 작성
+    </a>
+    {% endif %}
+</div>
 
 <div class="row">
     <div class="col-12">
+        {% if notices %}
         {% for notice in notices %}
         <div class="card mb-3">
             <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{{ url_for('notice_detail', notice_id=notice[0]) }}" class="text-decoration-none">
-                        {{ notice[1] }}
-                    </a>
-                </h5>
-                <p class="card-text">{{ notice[2][:100] }}{% if notice[2]|length > 100 %}...{% endif %}</p>
-                <small class="text-muted">{{ notice[4] }} | {{ notice[3] }}</small>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h5 class="card-title">
+                            <a href="{{ url_for('notice_detail', notice_id=notice[0]) }}" 
+                               class="text-decoration-none text-dark">
+                                <i class="bi bi-file-text text-primary me-2"></i>
+                                {{ notice[1] }}
+                            </a>
+                        </h5>
+                        <p class="card-text text-muted">
+                            {{ notice[2][:150] }}{% if notice[2]|length > 150 %}...{% endif %}
+                        </p>
+                        <div class="d-flex align-items-center text-muted">
+                            <small>
+                                <i class="bi bi-person me-1"></i>{{ notice[5] }}
+                                <span class="mx-2">|</span>
+                                <i class="bi bi-calendar me-1"></i>{{ notice[4][:16] }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="ms-3">
+                        {% if notice[3] %}
+                        <i class="bi bi-image text-info" title="이미지 첨부"></i>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
         {% endfor %}
-        
-        {% if not notices %}
-        <div class="alert alert-info">등록된 공지사항이 없습니다.</div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-megaphone text-muted" style="font-size: 5rem;"></i>
+            <h4 class="text-muted mt-3">등록된 공지사항이 없습니다</h4>
+            <p class="text-muted">새로운 공지사항이 등록되면 여기에 표시됩니다.</p>
+        </div>
         {% endif %}
     </div>
 </div>
