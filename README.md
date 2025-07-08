@@ -93,7 +93,7 @@ SQLite 데이터베이스(`alumni.db`)가 자동으로 생성됩니다.
    - 배포 설정:
      - **Name**: `금호중앙동문회`
      - **Environment**: `Python 3`
-     - **Build Command**: `pip install -r requirements.txt`
+     - **Build Command**: `python -m pip install -r requirements.txt`
      - **Start Command**: `python app.py`
    - "Create Web Service" 클릭
 
