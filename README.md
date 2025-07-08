@@ -35,7 +35,7 @@ Flask 기반의 동문회 관리 웹사이트입니다.
 
 1. 필요한 패키지 설치:
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 2. 애플리케이션 실행:
