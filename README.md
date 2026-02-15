@@ -1,4 +1,4 @@
-# 금호중앙동문회 웹사이트
+# 금고중앙동문회 웹사이트
 
 Flask 기반의 동문회 관리 웹사이트입니다.
 
@@ -33,17 +33,31 @@ Flask 기반의 동문회 관리 웹사이트입니다.
 
 ## 설치 및 실행
 
-1. 필요한 패키지 설치:
-```bash
-python -m pip install -r requirements.txt
-```
+### Supabase 설정
 
-2. 애플리케이션 실행:
+1. **Supabase 프로젝트 생성**
+   - [supabase.com](https://supabase.com)에서 계정 생성
+   - 새 프로젝트 생성
+   - 프로젝트 설정에서 API URL과 anon key 확인
+
+2. **환경 변수 설정**
+   - `.env.example`을 `.env`로 복사
+   - Supabase URL과 anon key를 설정
+   ```bash
+   cp .env.example .env
+   # .env 파일을 편집하여 실제 값으로 변경
+   ```
+
+3. **데이터베이스 마이그레이션**
+   - Supabase 대시보드의 SQL Editor에서 `supabase/migrations/create_tables.sql` 실행
+   - 또는 Supabase CLI 사용 (선택사항)
+
+4. **애플리케이션 실행**:
 ```bash
 python app.py
 ```
 
-3. 브라우저에서 `http://localhost:5000` 접속
+5. 브라우저에서 `http://localhost:5000` 접속
 
 ## 기본 계정
 
@@ -59,13 +73,16 @@ python app.py
 
 ## 데이터베이스
 
-SQLite 데이터베이스(`alumni.db`)가 자동으로 생성됩니다.
+Supabase PostgreSQL 데이터베이스를 사용합니다.
+- 클라우드 기반으로 별도 설치 불필요
+- 실시간 기능 지원
+- 자동 백업 및 확장성
 
 ## 보안 주의사항
 
-- 실제 운영시 `app.secret_key` 변경 필요
+- 실제 운영시 환경 변수로 시크릿 키 관리
 - HTTPS 사용 권장
-- 정기적인 데이터 백업 필요
+- Supabase RLS(Row Level Security) 정책 확인
 - 업로드 폴더 권한 설정 확인
 
 ## 배포
@@ -91,10 +108,11 @@ SQLite 데이터베이스(`alumni.db`)가 자동으로 생성됩니다.
    - "New Web Service" 클릭
    - GitHub 저장소 연결
    - 배포 설정:
-     - **Name**: `금호중앙동문회`
+     - **Name**: `금고중앙동문회`
      - **Environment**: `Python 3`
-     - **Build Command**: `python -m pip install -r requirements.txt`
+     - **Build Command**: `pip install -r requirements.txt`
      - **Start Command**: `python app.py`
+     - **Environment Variables**: Supabase URL과 anon key 설정
    - "Create Web Service" 클릭
 
 4. **배포 완료**
@@ -103,6 +121,7 @@ SQLite 데이터베이스(`alumni.db`)가 자동으로 생성됩니다.
 
 ### 배포 후 확인사항
 - ✅ 사이트 접속 확인
+- ✅ Supabase 연결 확인
 - ✅ 관리자 로그인: `관리자` / `admin1234`
 - ✅ 기본 기능 테스트
 - ✅ HTTPS 자동 적용 확인
@@ -110,4 +129,5 @@ SQLite 데이터베이스(`alumni.db`)가 자동으로 생성됩니다.
 ### 주의사항
 - 무료 플랜: 15분 비활성시 슬립 모드
 - 첫 접속시 깨어나는데 30초 소요
-- 데이터는 영구 보존됨
+- Supabase 무료 플랜: 500MB 데이터베이스, 50MB 파일 저장소
+- 데이터는 Supabase 클라우드에 영구 보존됨
