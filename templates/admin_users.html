@@ -7,6 +7,48 @@
 
 <div class="card mb-4">
     <div class="card-header">
+        <h5>
+            <i class="bi bi-file-earmark-arrow-up me-2"></i>대량 회원 등록
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('bulk_upload') }}" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="file" class="form-control" name="file" accept=".pdf,.txt,.csv" required>
+                    <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        PDF, TXT, CSV 파일을 업로드하세요. 파일에는 이름, 기수, 전화번호, 주소 정보가 포함되어야 합니다.
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-upload me-1"></i>일괄 등록
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <div class="mt-3">
+            <div class="alert alert-info">
+                <h6><i class="bi bi-lightbulb me-1"></i>파일 형식 안내</h6>
+                <ul class="mb-0">
+                    <li><strong>PDF:</strong> 스캔된 문서나 텍스트 PDF 모두 지원</li>
+                    <li><strong>TXT:</strong> 일반 텍스트 파일 (UTF-8 인코딩)</li>
+                    <li><strong>CSV:</strong> 쉼표로 구분된 데이터 파일</li>
+                </ul>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        예시: "홍길동 15기 010-1234-5678 서울시 강남구..." 형식으로 작성
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
         <h5>신규 동문 등록</h5>
     </div>
     <div class="card-body">

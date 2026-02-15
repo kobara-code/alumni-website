@@ -6,6 +6,8 @@ from datetime import datetime
 import hashlib
 import secrets
 import re
+import PyPDF2
+import io
 from supabase import create_client, Client
 
 def format_phone(phone):
@@ -24,6 +26,75 @@ app.secret_key = secrets.token_hex(32)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
+ALLOWED_EXTENSIONS = {'pdf', 'txt', 'csv'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def extract_text_from_pdf(file_stream):
+    """PDF에서 텍스트 추출"""
+    try:
+        pdf_reader = PyPDF2.PdfReader(file_stream)
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text() + "\n"
+        return text
+    except Exception as e:
+        return f"PDF 읽기 오류: {str(e)}"
+
+def parse_member_data(text):
+    """텍스트에서 회원 정보 파싱"""
+    members = []
+    lines = text.split('\n')
+    
+    current_member = {}
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # 이름 패턴 (한글 2-4자)
+        name_match = re.search(r'([가-힣]{2,4})', line)
+        
+        # 기수 패턴 (숫자 + 기)
+        year_match = re.search(r'(\d{1,2})기', line)
+        
+        # 전화번호 패턴
+        phone_match = re.search(r'(01[0-9]-?\d{3,4}-?\d{4})', line)
+        
+        # 주소 패턴 (시/도로 시작하는 긴 텍스트)
+        address_match = re.search(r'([가-힣]+[시도]\s*[가-힣\s\d-]+)', line)
+        
+        if name_match and year_match:
+            # 새로운 회원 정보 시작
+            if current_member:
+                members.append(current_member)
+            
+            current_member = {
+                'name': name_match.group(1),
+                'graduation_year': int(year_match.group(1)),
+                'phone': '',
+                'work_address': '',
+                'home_address': ''
+            }
+        
+        if current_member:
+            if phone_match:
+                current_member['phone'] = phone_match.group(1).replace('-', '')
+            
+            if address_match:
+                address = address_match.group(1)
+                if '직장' in line or '회사' in line or '사무실' in line:
+                    current_member['work_address'] = address
+                else:
+                    current_member['home_address'] = address
+    
+    # 마지막 회원 추가
+    if current_member:
+        members.append(current_member)
+    
+    return members
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Jinja2 필터 등록
@@ -476,6 +547,83 @@ def add_user():
     
     return redirect(url_for('admin_users'))
 
+@app.route('/admin/bulk_upload', methods=['POST'])
+def bulk_upload():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    if 'file' not in request.files:
+        flash('파일이 선택되지 않았습니다.')
+        return redirect(url_for('admin_users'))
+    
+    file = request.files['file']
+    if file.filename == '':
+        flash('파일이 선택되지 않았습니다.')
+        return redirect(url_for('admin_users'))
+    
+    if file and allowed_file(file.filename):
+        try:
+            # 파일 내용 읽기
+            file_content = file.read()
+            file.seek(0)  # 파일 포인터 리셋
+            
+            text = ""
+            if file.filename.lower().endswith('.pdf'):
+                text = extract_text_from_pdf(io.BytesIO(file_content))
+            elif file.filename.lower().endswith('.txt'):
+                text = file_content.decode('utf-8')
+            elif file.filename.lower().endswith('.csv'):
+                text = file_content.decode('utf-8')
+            
+            # 회원 정보 파싱
+            members = parse_member_data(text)
+            
+            if not members:
+                flash('파일에서 회원 정보를 찾을 수 없습니다.')
+                return redirect(url_for('admin_users'))
+            
+            # 회원 일괄 등록
+            success_count = 0
+            error_count = 0
+            
+            for member in members:
+                try:
+                    # 중복 확인
+                    existing = supabase.table('users').select('*').eq('name', member['name']).execute()
+                    if existing.data:
+                        error_count += 1
+                        continue
+                    
+                    password = generate_password_hash(f"{member['name']}1234")
+                    
+                    user_result = supabase.table('users').insert({
+                        'name': member['name'],
+                        'password': password,
+                        'graduation_year': member['graduation_year'],
+                        'phone': member['phone'],
+                        'work_address': member['work_address'],
+                        'home_address': member['home_address'],
+                        'is_student': False
+                    }).execute()
+                    
+                    user_id = user_result.data[0]['id']
+                    supabase.table('events').insert({'user_id': user_id}).execute()
+                    
+                    success_count += 1
+                    log_activity('대량 동문 추가', member['name'], f'{member["graduation_year"]}기')
+                    
+                except Exception as e:
+                    error_count += 1
+                    continue
+            
+            flash(f'일괄 등록 완료: 성공 {success_count}명, 실패 {error_count}명')
+            
+        except Exception as e:
+            flash(f'파일 처리 오류: {e}')
+    else:
+        flash('지원하지 않는 파일 형식입니다. PDF, TXT, CSV 파일만 업로드 가능합니다.')
+    
+    return redirect(url_for('admin_users'))
 if __name__ == '__main__':
     init_db()
     port = int(os.environ.get('PORT', 5000))
