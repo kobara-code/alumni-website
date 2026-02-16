@@ -47,32 +47,7 @@
         </h5>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('add_finance') }}">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <select class="form-select" name="type" required>
-                        <option value="">구분 선택</option>
-                        <option value="income">
-                            <i class="bi bi-arrow-up"></i> 수입
-                        </option>
-                        <option value="expense">
-                            <i class="bi bi-arrow-down"></i> 지출
-                        </option>
-                    </select>
-                </div>
-                <div class="col-md-5">
-                    <input type="text" class="form-control" name="description" placeholder="내역 설명" required>
-                </div>
-                <div class="col-md-2">
-                    <input type="number" class="form-control" name="amount" placeholder="금액" required>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-plus me-1"></i>추가
-                    </button>
-                </div>
-            </div>
-        </form>
+        <p class="text-muted">관리자 기능 - 추가 기능은 추후 구현 예정</p>
     </div>
 </div>
 {% endif %}
@@ -102,9 +77,9 @@
                 <tbody>
                     {% for finance in finances %}
                     <tr>
-                        <td>{{ finance[4][:10] }}</td>
+                        <td>{{ finance.date[:10] if finance.date else '-' }}</td>
                         <td>
-                            {% if finance[1] == 'income' %}
+                            {% if finance.type == 'income' %}
                                 <span class="badge bg-success">
                                     <i class="bi bi-arrow-up me-1"></i>수입
                                 </span>
@@ -114,28 +89,18 @@
                                 </span>
                             {% endif %}
                         </td>
-                        <td>{{ finance[2] }}</td>
+                        <td>{{ finance.description }}</td>
                         <td>
-                            {% if finance[1] == 'income' %}
-                                <span class="text-success fw-bold">+{{ "{:,}".format(finance[3]) }}원</span>
+                            {% if finance.type == 'income' %}
+                                <span class="text-success fw-bold">+{{ "{:,}".format(finance.amount) }}원</span>
                             {% else %}
-                                <span class="text-danger fw-bold">-{{ "{:,}".format(finance[3]) }}원</span>
+                                <span class="text-danger fw-bold">-{{ "{:,}".format(finance.amount) }}원</span>
                             {% endif %}
                         </td>
-                        <td>{{ finance[5] }}</td>
+                        <td>{{ finance.created_by }}</td>
                         {% if session.is_admin %}
                         <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary" onclick="editFinance({{ finance[0] }}, '{{ finance[1] }}', '{{ finance[2] }}', {{ finance[3] }})">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <form method="POST" action="{{ url_for('delete_finance', finance_id=finance[0]) }}" 
-                                      style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
-                                    <button type="submit" class="btn btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
+                            <span class="text-muted">-</span>
                         </td>
                         {% endif %}
                     </tr>
