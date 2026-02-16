@@ -622,32 +622,26 @@ def upload_image():
     
     if file:
         try:
-            # 파일명 생성
-            from datetime import datetime
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
-            filename = f"{timestamp}.{ext}"
+            import base64
             
-            # Supabase Storage에 업로드
+            # 파일을 base64로 인코딩
             file_bytes = file.read()
+            base64_image = base64.b64encode(file_bytes).decode('utf-8')
             
-            # Storage에 업로드 (public bucket 사용)
-            storage_path = f"gallery/{filename}"
-            get_supabase().storage.from_('images').upload(storage_path, file_bytes, {
-                'content-type': file.content_type
-            })
+            # MIME 타입 확인
+            mime_type = file.content_type or 'image/jpeg'
             
-            # 공개 URL 가져오기
-            public_url = get_supabase().storage.from_('images').get_public_url(storage_path)
+            # data URL 형식으로 저장
+            image_data_url = f"data:{mime_type};base64,{base64_image}"
             
-            # DB에 기록
+            # DB에 기록 (filename에 data URL 저장)
             get_supabase().table('gallery').insert({
-                'filename': storage_path,
+                'filename': image_data_url,
                 'original_name': file.filename,
                 'uploaded_by': session['user_name']
             }).execute()
             
-            log_activity('사진 업로드', session['user_name'], filename)
+            log_activity('사진 업로드', session['user_name'], file.filename)
             flash('사진이 업로드되었습니다.')
         except Exception as e:
             flash(f'사진 업로드 오류: {e}')
@@ -673,18 +667,10 @@ def delete_image(image_id):
             flash('삭제 권한이 없습니다.')
             return redirect(url_for('gallery'))
         
-        # Supabase Storage에서 파일 삭제 시도
-        try:
-            if image['filename'].startswith('gallery/'):
-                get_supabase().storage.from_('images').remove([image['filename']])
-        except Exception as storage_error:
-            print(f"Storage 삭제 오류: {storage_error}")
-            # Storage 삭제 실패해도 DB는 삭제
-        
-        # DB에서 삭제
+        # DB에서 삭제 (base64 이미지는 별도 파일 삭제 불필요)
         get_supabase().table('gallery').delete().eq('id', image_id).execute()
         
-        log_activity('사진 삭제', session['user_name'], image['filename'])
+        log_activity('사진 삭제', session['user_name'], image['original_name'])
         flash('사진이 삭제되었습니다.')
     except Exception as e:
         flash(f'사진 삭제 오류: {e}')
