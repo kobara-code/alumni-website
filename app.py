@@ -47,6 +47,29 @@ def parse_member_data(text):
     members = []
     lines = text.split('\n')
     
+    # CSV 형식 확인 (첫 줄에 헤더가 있는지)
+    if lines and ('이름' in lines[0] or 'name' in lines[0].lower()):
+        # CSV 형식 파싱
+        for i, line in enumerate(lines[1:], 1):  # 헤더 제외
+            if not line.strip():
+                continue
+            
+            parts = [p.strip() for p in line.split(',')]
+            if len(parts) >= 2:
+                try:
+                    member = {
+                        'name': parts[0],
+                        'graduation_year': int(parts[1].replace('기', '')),
+                        'phone': parts[2] if len(parts) > 2 else '',
+                        'work_address': parts[3] if len(parts) > 3 else '',
+                        'home_address': parts[4] if len(parts) > 4 else ''
+                    }
+                    members.append(member)
+                except (ValueError, IndexError):
+                    continue
+        return members
+    
+    # 일반 텍스트 형식 파싱
     current_member = {}
     
     for line in lines:
@@ -68,7 +91,7 @@ def parse_member_data(text):
         
         if name_match and year_match:
             # 새로운 회원 정보 시작
-            if current_member:
+            if current_member and current_member.get('name'):
                 members.append(current_member)
             
             current_member = {
@@ -91,7 +114,7 @@ def parse_member_data(text):
                     current_member['home_address'] = address
     
     # 마지막 회원 추가
-    if current_member:
+    if current_member and current_member.get('name'):
         members.append(current_member)
     
     return members
@@ -902,6 +925,7 @@ def bulk_upload():
             # 회원 일괄 등록
             success_count = 0
             error_count = 0
+            error_messages = []
             
             for member in members:
                 try:
@@ -909,6 +933,7 @@ def bulk_upload():
                     existing = get_supabase().table('users').select('*').eq('name', member['name']).execute()
                     if existing.data:
                         error_count += 1
+                        error_messages.append(f"{member['name']}: 이미 존재하는 회원")
                         continue
                     
                     password = generate_password_hash(f"{member['name']}1234")
@@ -931,9 +956,13 @@ def bulk_upload():
                     
                 except Exception as e:
                     error_count += 1
+                    error_messages.append(f"{member['name']}: {str(e)}")
                     continue
             
             flash(f'일괄 등록 완료: 성공 {success_count}명, 실패 {error_count}명')
+            if error_messages and len(error_messages) <= 10:
+                for msg in error_messages[:10]:
+                    flash(msg, 'warning')
             
         except Exception as e:
             flash(f'파일 처리 오류: {e}')
