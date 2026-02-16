@@ -52,28 +52,25 @@
         <tbody>
             {% for user in users_events %}
             <tr>
-                <td>{{ user[1] }}</td>
-                <td>{{ user[2] }}기</td>
-                <td>{{ user[3] | format_phone }}</td>
-                <td>{{ user[4] or '-' }}</td>
-                <td>{{ user[5] or '-' }}</td>
+                <td>{{ user.name }}</td>
+                <td>{{ user.graduation_year }}기</td>
+                <td>{{ user.phone | format_phone }}</td>
+                <td>{{ user.work_address or '-' }}</td>
+                <td>{{ user.home_address or '-' }}</td>
                 <td>
                     <span class="badge 
-                        {% if user[6] == '참석' %}bg-success
-                        {% elif user[6] == '미참석' %}bg-danger
-                        {% elif user[6] == '미정' %}bg-warning
+                        {% if user.status == '참석' %}bg-success
+                        {% elif user.status == '미참석' %}bg-danger
+                        {% elif user.status == '미정' %}bg-warning
                         {% else %}bg-secondary{% endif %}">
-                        {{ user[6] }}
+                        {{ user.status }}
                     </span>
                 </td>
-                <td>{{ user[7] or '-' }}</td>
+                <td>{{ user.notes or '-' }}</td>
                 {% if session.is_student %}
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="showUpdateModal({{ user[0] }}, '{{ user[1] }}', '{{ user[6] }}', '{{ user[7] or '' }}')">
+                    <button class="btn btn-sm btn-primary" onclick="showUpdateModal('{{ user.id }}', '{{ user.name }}', '{{ user.status }}', '{{ user.notes or '' }}')">
                         수정
-                    </button>
-                    <button class="btn btn-sm btn-warning" onclick="showChangeModal({{ user[0] }}, '{{ user[1] }}', '{{ user[3] or '' }}', '{{ user[4] or '' }}', '{{ user[5] or '' }}')">
-                        정보변경
                     </button>
                 </td>
                 {% endif %}

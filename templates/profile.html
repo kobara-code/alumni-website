@@ -24,13 +24,13 @@
                             <label class="form-label">
                                 <i class="bi bi-person me-1"></i>이름
                             </label>
-                            <input type="text" class="form-control" value="{{ user[1] }}" readonly>
+                            <input type="text" class="form-control" value="{{ user.name }}" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">
                                 <i class="bi bi-mortarboard me-1"></i>졸업 기수
                             </label>
-                            <input type="text" class="form-control" value="{{ user[3] }}기" readonly>
+                            <input type="text" class="form-control" value="{{ user.graduation_year }}기" readonly>
                         </div>
                     </div>
                     
@@ -39,10 +39,10 @@
                             <i class="bi bi-telephone me-1"></i>전화번호
                         </label>
                         <input type="text" class="form-control" id="phone" name="phone" 
-                               value="{{ user[4] or '' }}" placeholder="전화번호를 입력하세요">
+                               value="{{ user.phone or '' }}" placeholder="전화번호를 입력하세요">
                         <div class="form-check mt-2">
                             <input class="form-check-input" type="checkbox" id="phone_public" 
-                                   name="phone_public" {% if user[9] %}checked{% endif %}>
+                                   name="phone_public" {% if user.phone_public %}checked{% endif %}>
                             <label class="form-check-label" for="phone_public">
                                 <i class="bi bi-eye me-1"></i>전화번호 공개
                             </label>
@@ -54,10 +54,10 @@
                             <i class="bi bi-building me-1"></i>직장 주소
                         </label>
                         <textarea class="form-control" id="work_address" name="work_address" 
-                                  rows="2" placeholder="직장 주소를 입력하세요">{{ user[5] or '' }}</textarea>
+                                  rows="2" placeholder="직장 주소를 입력하세요">{{ user.work_address or '' }}</textarea>
                         <div class="form-check mt-2">
                             <input class="form-check-input" type="checkbox" id="work_address_public" 
-                                   name="work_address_public" {% if user[10] %}checked{% endif %}>
+                                   name="work_address_public" {% if user.work_address_public %}checked{% endif %}>
                             <label class="form-check-label" for="work_address_public">
                                 <i class="bi bi-eye me-1"></i>직장 주소 공개
                             </label>
@@ -69,10 +69,10 @@
                             <i class="bi bi-house me-1"></i>거주지 주소
                         </label>
                         <textarea class="form-control" id="home_address" name="home_address" 
-                                  rows="2" placeholder="거주지 주소를 입력하세요">{{ user[6] or '' }}</textarea>
+                                  rows="2" placeholder="거주지 주소를 입력하세요">{{ user.home_address or '' }}</textarea>
                         <div class="form-check mt-2">
                             <input class="form-check-input" type="checkbox" id="home_address_public" 
-                                   name="home_address_public" {% if user[11] %}checked{% endif %}>
+                                   name="home_address_public" {% if user.home_address_public %}checked{% endif %}>
                             <label class="form-check-label" for="home_address_public">
                                 <i class="bi bi-eye me-1"></i>거주지 주소 공개
                             </label>
