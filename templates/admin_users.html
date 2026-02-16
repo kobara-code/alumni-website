@@ -108,34 +108,34 @@
                 <tbody>
                     {% for user in users %}
                     <tr>
-                        <td>{{ user[1] }}</td>
-                        <td>{{ user[3] }}기</td>
-                        <td>{{ user[4] | format_phone }}</td>
-                        <td>{{ user[5] or '-' }}</td>
-                        <td>{{ user[6] or '-' }}</td>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.graduation_year }}기</td>
+                        <td>{{ user.phone | format_phone }}</td>
+                        <td>{{ user.work_address or '-' }}</td>
+                        <td>{{ user.home_address or '-' }}</td>
                         <td>
-                            {% if user[7] %}
+                            {% if user.is_admin %}
                                 <span class="badge bg-danger">관리자</span>
-                            {% elif user[8] %}
+                            {% elif user.is_student %}
                                 <span class="badge bg-warning">재학생</span>
                             {% else %}
                                 <span class="badge bg-secondary">일반</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if user[9] %}
+                            {% if user.phone_public %}
                                 <span class="text-success">공개</span>
                             {% else %}
                                 <span class="text-muted">비공개</span>
                             {% endif %}
                         </td>
                         <td>
-                            직장: {% if user[10] %}<span class="text-success">공개</span>{% else %}<span class="text-muted">비공개</span>{% endif %}<br>
-                            거주지: {% if user[11] %}<span class="text-success">공개</span>{% else %}<span class="text-muted">비공개</span>{% endif %}
+                            직장: {% if user.work_address_public %}<span class="text-success">공개</span>{% else %}<span class="text-muted">비공개</span>{% endif %}<br>
+                            거주지: {% if user.home_address_public %}<span class="text-success">공개</span>{% else %}<span class="text-muted">비공개</span>{% endif %}
                         </td>
                         <td>
-                            {% if user[1] != '관리자' %}
-                            <form method="POST" action="{{ url_for('delete_user', user_id=user[0]) }}" style="display:inline;" onsubmit="return confirm('{{ user[1] }} 동문을 정말 삭제하시겠습니까?')">
+                            {% if user.name != '관리자' %}
+                            <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('{{ user.name }} 동문을 정말 삭제하시겠습니까?')">
                                 <button type="submit" class="btn btn-sm btn-danger">
                                     <i class="bi bi-trash"></i> 삭제
                                 </button>
