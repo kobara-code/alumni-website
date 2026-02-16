@@ -271,7 +271,8 @@ def directory():
         if year_filter:
             query = query.eq('graduation_year', year_filter)
         
-        users_result = query.order('graduation_year', desc=True).order('name').execute()
+        # 재학생 먼저, 그 다음 기수 역순, 이름순
+        users_result = query.order('is_student', desc=True).order('graduation_year', desc=True).order('name').execute()
         users = users_result.data
         
         # 기수 목록 가져오기
@@ -802,7 +803,8 @@ def add_user():
     home_address = request.form['home_address']
     is_student = 'is_student' in request.form
     student_year = request.form.get('student_year', '') if is_student else ''
-    password = generate_password_hash(f"{name}1234")
+    student_role = request.form.get('student_role', '') if is_student else ''
+    password = generate_password_hash('1234')
     
     try:
         user_result = get_supabase().table('users').insert({
@@ -813,14 +815,15 @@ def add_user():
             'work_address': work_address,
             'home_address': home_address,
             'is_student': is_student,
-            'student_year': student_year
+            'student_year': student_year,
+            'student_role': student_role
         }).execute()
         
         user_id = user_result.data[0]['id']
         get_supabase().table('events').insert({'user_id': user_id}).execute()
         
         log_activity('동문 추가', name, f'{graduation_year}기')
-        flash(f'{name} 동문이 추가되었습니다. 초기 비밀번호: {name}1234')
+        flash(f'{name} 동문이 추가되었습니다. 초기 비밀번호: 1234')
     except Exception as e:
         flash(f'동문 추가 오류: {e}')
     
@@ -863,6 +866,7 @@ def edit_user(user_id):
     home_address = request.form['home_address']
     is_student = 'is_student' in request.form
     student_year = request.form.get('student_year', '') if is_student else ''
+    student_role = request.form.get('student_role', '') if is_student else ''
     
     try:
         get_supabase().table('users').update({
@@ -872,7 +876,8 @@ def edit_user(user_id):
             'work_address': work_address,
             'home_address': home_address,
             'is_student': is_student,
-            'student_year': student_year
+            'student_year': student_year,
+            'student_role': student_role
         }).eq('id', user_id).execute()
         
         log_activity('동문 정보 수정', name, f'{graduation_year}기')
@@ -969,7 +974,7 @@ def bulk_upload():
                         error_messages.append(f"{member['name']}: 이미 존재하는 회원")
                         continue
                     
-                    password = generate_password_hash(f"{member['name']}1234")
+                    password = generate_password_hash('1234')
                     
                     user_result = get_supabase().table('users').insert({
                         'name': member['name'],

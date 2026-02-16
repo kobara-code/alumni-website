@@ -85,6 +85,13 @@
                         <option value="본과4">본과 4학년</option>
                     </select>
                 </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="student_role" id="student_role_select">
+                        <option value="">역할 선택 (선택사항)</option>
+                        <option value="회장">회장</option>
+                        <option value="총무">총무</option>
+                    </select>
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-6">
@@ -114,6 +121,7 @@
                         <th>거주지</th>
                         <th>권한</th>
                         <th>학년</th>
+                        <th>역할</th>
                         <th>전화공개</th>
                         <th>주소공개</th>
                         <th>작업</th>
@@ -139,6 +147,13 @@
                         <td>
                             {% if user.is_student and user.student_year %}
                                 <span class="badge bg-info">{{ user.student_year }}</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_student and user.student_role %}
+                                <span class="badge bg-success">{{ user.student_role }}</span>
                             {% else %}
                                 -
                             {% endif %}
@@ -224,6 +239,14 @@
                             <option value="본과4" {% if user.student_year == '본과4' %}selected{% endif %}>본과 4학년</option>
                         </select>
                     </div>
+                    <div class="mb-3" id="edit_student_role_row_{{ user.id }}" style="{% if not user.is_student %}display: none;{% endif %}">
+                        <label class="form-label">역할 (선택사항)</label>
+                        <select class="form-select" name="student_role">
+                            <option value="">역할 선택</option>
+                            <option value="회장" {% if user.student_role == '회장' %}selected{% endif %}>회장</option>
+                            <option value="총무" {% if user.student_role == '총무' %}selected{% endif %}>총무</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
@@ -245,7 +268,9 @@ function toggleStudentYear() {
 function toggleEditStudentYear(userId) {
     const isStudent = document.getElementById('edit_student_' + userId).checked;
     const studentYearRow = document.getElementById('edit_student_year_row_' + userId);
+    const studentRoleRow = document.getElementById('edit_student_role_row_' + userId);
     studentYearRow.style.display = isStudent ? 'block' : 'none';
+    studentRoleRow.style.display = isStudent ? 'block' : 'none';
 }
 </script>
 

@@ -69,6 +69,12 @@
                         </td>
                         <td>
                             <span class="badge bg-secondary">{{ user.graduation_year }}기</span>
+                            {% if user.is_student and user.student_year %}
+                            <span class="badge bg-info ms-1">{{ user.student_year }}</span>
+                            {% endif %}
+                            {% if user.is_student and user.student_role %}
+                            <span class="badge bg-success ms-1">{{ user.student_role }}</span>
+                            {% endif %}
                         </td>
                         <td>
                             {% if is_admin_or_student or user.phone_public %}
