@@ -105,10 +105,20 @@ except:
 app.jinja_env.filters['format_phone'] = format_phone
 
 # Supabase 설정
-SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://your-project.supabase.co')
-SUPABASE_KEY = os.environ.get('SUPABASE_ANON_KEY', 'your-anon-key')
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Supabase 클라이언트는 필요할 때 생성
+supabase: Client = None
+
+def get_supabase():
+    """Supabase 클라이언트를 반환 (lazy initialization)"""
+    global supabase
+    if supabase is None:
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            raise Exception("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return supabase
 
 def hash_sensitive_data(data):
     if not data:
@@ -127,11 +137,13 @@ def init_db():
             print("Warning: SUPABASE_ANON_KEY not configured")
             return
         
+        supabase = get_supabase()
+        
         # 기본 관리자 계정 확인 및 생성
-        admin_check = supabase.table('users').select('*').eq('name', '관리자').execute()
+        admin_check = get_supabase().table('users').select('*').eq('name', '관리자').execute()
         if not admin_check.data:
             admin_password = generate_password_hash('admin1234')
-            supabase.table('users').insert({
+            get_supabase().table('users').insert({
                 'name': '관리자',
                 'password': admin_password,
                 'is_admin': True
@@ -149,9 +161,9 @@ def init_db():
         ]
         
         for key, value in settings:
-            existing = supabase.table('settings').select('*').eq('key', key).execute()
+            existing = get_supabase().table('settings').select('*').eq('key', key).execute()
             if not existing.data:
-                supabase.table('settings').insert({'key': key, 'value': value}).execute()
+                get_supabase().table('settings').insert({'key': key, 'value': value}).execute()
                 
     except Exception as e:
         print(f"Database initialization error: {e}")
@@ -159,7 +171,8 @@ def init_db():
 
 def log_activity(action, target_user=None, details=None):
     try:
-        supabase.table('activity_logs').insert({
+        supabase = get_supabase()
+        get_supabase().table('activity_logs').insert({
             'action': action,
             'target_user': target_user,
             'details': details,
@@ -175,11 +188,11 @@ def index():
     
     try:
         # 사이트 이름 가져오기
-        result = supabase.table('settings').select('value').eq('key', 'site_name').execute()
+        result = get_supabase().table('settings').select('value').eq('key', 'site_name').execute()
         site_name = result.data[0]['value'] if result.data else '금호중앙동문회'
         
         # 갤러리 이미지 가져오기
-        gallery_result = supabase.table('gallery').select('*').order('created_at', desc=True).limit(5).execute()
+        gallery_result = get_supabase().table('gallery').select('*').order('created_at', desc=True).limit(5).execute()
         gallery_images = gallery_result.data
         
         return render_template('index.html', site_name=site_name, gallery_images=gallery_images)
@@ -194,7 +207,7 @@ def login():
         password = request.form['password']
         
         try:
-            result = supabase.table('users').select('*').eq('name', name).execute()
+            result = get_supabase().table('users').select('*').eq('name', name).execute()
             user = result.data[0] if result.data else None
             
             if user and check_password_hash(user['password'], password):
@@ -227,7 +240,7 @@ def directory():
     year_filter = request.args.get('year', '')
     
     try:
-        query = supabase.table('users').select('*').neq('name', '관리자')
+        query = get_supabase().table('users').select('*').neq('name', '관리자')
         
         if search:
             query = query.ilike('name', f'%{search}%')
@@ -239,7 +252,7 @@ def directory():
         users = users_result.data
         
         # 기수 목록 가져오기
-        years_result = supabase.table('users').select('graduation_year').not_.is_('graduation_year', 'null').execute()
+        years_result = get_supabase().table('users').select('graduation_year').not_.is_('graduation_year', 'null').execute()
         years = sorted(list(set([user['graduation_year'] for user in years_result.data if user['graduation_year']])), reverse=True)
         
         is_admin_or_student = session.get('is_admin') or session.get('is_student')
@@ -259,7 +272,7 @@ def profile():
         return redirect(url_for('login'))
     
     try:
-        result = supabase.table('users').select('*').eq('id', session['user_id']).execute()
+        result = get_supabase().table('users').select('*').eq('id', session['user_id']).execute()
         user = result.data[0] if result.data else None
         return render_template('profile.html', user=user)
     except Exception as e:
@@ -293,7 +306,7 @@ def update_profile():
             update_data['password'] = generate_password_hash(new_password)
             log_activity('비밀번호 변경', session['user_name'])
         
-        supabase.table('users').update(update_data).eq('id', session['user_id']).execute()
+        get_supabase().table('users').update(update_data).eq('id', session['user_id']).execute()
         log_activity('프로필 수정', session['user_name'])
         flash('프로필이 업데이트되었습니다.')
     except Exception as e:
@@ -307,7 +320,7 @@ def notices():
         return redirect(url_for('login'))
     
     try:
-        result = supabase.table('notices').select('*').order('created_at', desc=True).execute()
+        result = get_supabase().table('notices').select('*').order('created_at', desc=True).execute()
         notices = result.data
         return render_template('notices.html', notices=notices)
     except Exception as e:
@@ -320,10 +333,10 @@ def notice_detail(notice_id):
         return redirect(url_for('login'))
     
     try:
-        notice_result = supabase.table('notices').select('*').eq('id', notice_id).execute()
+        notice_result = get_supabase().table('notices').select('*').eq('id', notice_id).execute()
         notice = notice_result.data[0] if notice_result.data else None
         
-        comments_result = supabase.table('comments').select('*').eq('notice_id', notice_id).order('created_at').execute()
+        comments_result = get_supabase().table('comments').select('*').eq('notice_id', notice_id).order('created_at').execute()
         comments = comments_result.data
         
         return render_template('notice_detail.html', notice=notice, comments=comments)
@@ -344,7 +357,7 @@ def add_comment():
         if session['user_name'] != '관리자' and session.get('user_year'):
             author_name = f"{session.get('user_year')}기 {session['user_name']}"
         
-        supabase.table('comments').insert({
+        get_supabase().table('comments').insert({
             'notice_id': notice_id,
             'author': author_name,
             'content': content
@@ -362,13 +375,13 @@ def finances():
     
     try:
         # 설정 확인
-        finance_public_result = supabase.table('settings').select('value').eq('key', 'finance_public').execute()
+        finance_public_result = get_supabase().table('settings').select('value').eq('key', 'finance_public').execute()
         finance_public = finance_public_result.data[0]['value'] == '1' if finance_public_result.data else True
         
-        finance_details_public_result = supabase.table('settings').select('value').eq('key', 'finance_details_public').execute()
+        finance_details_public_result = get_supabase().table('settings').select('value').eq('key', 'finance_details_public').execute()
         finance_details_public = finance_details_public_result.data[0]['value'] == '1' if finance_details_public_result.data else True
         
-        bank_info_public_result = supabase.table('settings').select('value').eq('key', 'bank_info_public').execute()
+        bank_info_public_result = get_supabase().table('settings').select('value').eq('key', 'bank_info_public').execute()
         bank_info_public = bank_info_public_result.data[0]['value'] == '1' if bank_info_public_result.data else True
         
         if not finance_public and not session.get('is_admin'):
@@ -377,19 +390,19 @@ def finances():
         
         finances = []
         if finance_details_public or session.get('is_admin'):
-            finances_result = supabase.table('finances').select('*').order('date', desc=True).execute()
+            finances_result = get_supabase().table('finances').select('*').order('date', desc=True).execute()
             finances = finances_result.data
         
         # 수입/지출 합계 계산
-        income_result = supabase.rpc('sum_finances_by_type', {'finance_type': 'income'}).execute()
+        income_result = get_supabase().rpc('sum_finances_by_type', {'finance_type': 'income'}).execute()
         total_income = income_result.data or 0
         
-        expense_result = supabase.rpc('sum_finances_by_type', {'finance_type': 'expense'}).execute()
+        expense_result = get_supabase().rpc('sum_finances_by_type', {'finance_type': 'expense'}).execute()
         total_expense = expense_result.data or 0
         
         bank_info = {}
         if bank_info_public or session.get('is_admin'):
-            bank_settings = supabase.table('settings').select('key, value').in_('key', ['bank_name', 'account_number', 'account_holder']).execute()
+            bank_settings = get_supabase().table('settings').select('key, value').in_('key', ['bank_name', 'account_number', 'account_holder']).execute()
             bank_info = {item['key']: item['value'] for item in bank_settings.data}
         
         balance = total_income - total_expense
@@ -440,7 +453,7 @@ def events():
         
         query += " ORDER BY u.graduation_year DESC, u.name"
         
-        users_events_result = supabase.rpc('execute_sql', {'query': query, 'params': params}).execute()
+        users_events_result = get_supabase().rpc('execute_sql', {'query': query, 'params': params}).execute()
         users_events = users_events_result.data
         
         # 상태별 인원 수 계산
@@ -452,7 +465,7 @@ def events():
         GROUP BY COALESCE(e.attendance_status, '무응답')
         """
         
-        status_counts_result = supabase.rpc('execute_sql', {'query': status_counts_query}).execute()
+        status_counts_result = get_supabase().rpc('execute_sql', {'query': status_counts_query}).execute()
         status_counts = {item['status']: item['count'] for item in status_counts_result.data}
         
         return render_template('events.html', users_events=users_events, status_counts=status_counts, 
@@ -473,17 +486,17 @@ def update_attendance():
     
     try:
         # 기존 이벤트 삭제
-        supabase.table('events').delete().eq('user_id', user_id).execute()
+        get_supabase().table('events').delete().eq('user_id', user_id).execute()
         
         # 새 이벤트 추가
-        supabase.table('events').insert({
+        get_supabase().table('events').insert({
             'user_id': user_id,
             'attendance_status': status,
             'notes': notes,
             'updated_by': session['user_name']
         }).execute()
         
-        user_result = supabase.table('users').select('name').eq('id', user_id).execute()
+        user_result = get_supabase().table('users').select('name').eq('id', user_id).execute()
         user_name = user_result.data[0]['name'] if user_result.data else 'Unknown'
         
         log_activity('참석상태 변경', user_name, f'{status} - {notes}')
@@ -498,7 +511,7 @@ def gallery():
         return redirect(url_for('login'))
     
     try:
-        result = supabase.table('gallery').select('*').order('created_at', desc=True).execute()
+        result = get_supabase().table('gallery').select('*').order('created_at', desc=True).execute()
         images = result.data
         return render_template('gallery.html', images=images)
     except Exception as e:
@@ -520,7 +533,7 @@ def admin_users():
         return redirect(url_for('index'))
     
     try:
-        result = supabase.table('users').select('*').order('graduation_year', desc=True).order('name').execute()
+        result = get_supabase().table('users').select('*').order('graduation_year', desc=True).order('name').execute()
         users = result.data
         return render_template('admin_users.html', users=users)
     except Exception as e:
@@ -541,7 +554,7 @@ def add_user():
     password = generate_password_hash(f"{name}1234")
     
     try:
-        user_result = supabase.table('users').insert({
+        user_result = get_supabase().table('users').insert({
             'name': name,
             'password': password,
             'graduation_year': int(graduation_year),
@@ -552,7 +565,7 @@ def add_user():
         }).execute()
         
         user_id = user_result.data[0]['id']
-        supabase.table('events').insert({'user_id': user_id}).execute()
+        get_supabase().table('events').insert({'user_id': user_id}).execute()
         
         log_activity('동문 추가', name, f'{graduation_year}기')
         flash(f'{name} 동문이 추가되었습니다. 초기 비밀번호: {name}1234')
@@ -603,14 +616,14 @@ def bulk_upload():
             for member in members:
                 try:
                     # 중복 확인
-                    existing = supabase.table('users').select('*').eq('name', member['name']).execute()
+                    existing = get_supabase().table('users').select('*').eq('name', member['name']).execute()
                     if existing.data:
                         error_count += 1
                         continue
                     
                     password = generate_password_hash(f"{member['name']}1234")
                     
-                    user_result = supabase.table('users').insert({
+                    user_result = get_supabase().table('users').insert({
                         'name': member['name'],
                         'password': password,
                         'graduation_year': member['graduation_year'],
@@ -621,7 +634,7 @@ def bulk_upload():
                     }).execute()
                     
                     user_id = user_result.data[0]['id']
-                    supabase.table('events').insert({'user_id': user_id}).execute()
+                    get_supabase().table('events').insert({'user_id': user_id}).execute()
                     
                     success_count += 1
                     log_activity('대량 동문 추가', member['name'], f'{member["graduation_year"]}기')
