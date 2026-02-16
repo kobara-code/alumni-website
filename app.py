@@ -320,7 +320,7 @@ def notices():
         return redirect(url_for('login'))
     
     try:
-        result = get_supabase().table('notices').select('*').order('created_at', desc=True).execute()
+        result = get_supabase().table('notices').select('*').order('pinned', desc=True).order('created_at', desc=True).execute()
         notices = result.data
         return render_template('notices.html', notices=notices)
     except Exception as e:
@@ -379,6 +379,74 @@ def delete_notice(notice_id):
         flash('공지사항이 삭제되었습니다.')
     except Exception as e:
         flash(f'공지사항 삭제 오류: {e}')
+    
+    return redirect(url_for('notices'))
+
+@app.route('/edit_notice/<notice_id>', methods=['POST'])
+def edit_notice(notice_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    title = request.form['title']
+    content = request.form['content']
+    
+    try:
+        # 공지사항 정보 가져오기
+        notice_result = get_supabase().table('notices').select('*').eq('id', notice_id).execute()
+        if not notice_result.data:
+            flash('공지사항을 찾을 수 없습니다.')
+            return redirect(url_for('notices'))
+        
+        notice = notice_result.data[0]
+        
+        # 본인이 작성한 글이거나 관리자만 수정 가능
+        author_name = session['user_name']
+        if session['user_name'] != '관리자' and session.get('user_year'):
+            author_name = f"{session.get('user_year')}기 {session['user_name']}"
+        
+        if notice['author'] != author_name and not session.get('is_admin'):
+            flash('수정 권한이 없습니다.')
+            return redirect(url_for('notices'))
+        
+        # 공지사항 수정
+        get_supabase().table('notices').update({
+            'title': title,
+            'content': content
+        }).eq('id', notice_id).execute()
+        
+        log_activity('공지사항 수정', session['user_name'], title)
+        flash('공지사항이 수정되었습니다.')
+        
+        return redirect(url_for('notice_detail', notice_id=notice_id))
+    except Exception as e:
+        flash(f'공지사항 수정 오류: {e}')
+        return redirect(url_for('notices'))
+
+@app.route('/pin_notice/<notice_id>', methods=['POST'])
+def pin_notice(notice_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('관리자 권한이 필요합니다.')
+        return redirect(url_for('notices'))
+    
+    try:
+        # 현재 상태 확인
+        notice_result = get_supabase().table('notices').select('pinned').eq('id', notice_id).execute()
+        if not notice_result.data:
+            flash('공지사항을 찾을 수 없습니다.')
+            return redirect(url_for('notices'))
+        
+        current_pinned = notice_result.data[0].get('pinned', False)
+        
+        # 상태 토글
+        get_supabase().table('notices').update({
+            'pinned': not current_pinned
+        }).eq('id', notice_id).execute()
+        
+        status = '고정' if not current_pinned else '고정 해제'
+        log_activity(f'공지사항 {status}', session['user_name'], notice_id)
+        flash(f'공지사항이 {status}되었습니다.')
+    except Exception as e:
+        flash(f'공지사항 고정 오류: {e}')
     
     return redirect(url_for('notices'))
 

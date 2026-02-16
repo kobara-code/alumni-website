@@ -48,11 +48,14 @@
     <div class="col-12">
         {% if notices %}
         {% for notice in notices %}
-        <div class="card mb-3">
+        <div class="card mb-3 {% if notice.pinned %}border-primary{% endif %}">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="flex-grow-1">
                         <h5 class="card-title">
+                            {% if notice.pinned %}
+                            <i class="bi bi-pin-angle-fill text-primary me-2"></i>
+                            {% endif %}
                             <a href="{{ url_for('notice_detail', notice_id=notice.id) }}" 
                                class="text-decoration-none text-dark">
                                 <i class="bi bi-file-text text-primary me-2"></i>
@@ -68,19 +71,68 @@
                                 <span class="mx-2">|</span>
                                 <i class="bi bi-calendar me-1"></i>{{ notice.created_at[:16] }}
                             </small>
-                            {% if session.is_admin or notice.author == session.user_name %}
-                            <form method="POST" action="{{ url_for('delete_notice', notice_id=notice.id) }}" 
-                                  style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    <i class="bi bi-trash"></i> 삭제
+                            <div>
+                                {% if session.is_admin %}
+                                <form method="POST" action="{{ url_for('pin_notice', notice_id=notice.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm {% if notice.pinned %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                        <i class="bi bi-pin-angle"></i> {% if notice.pinned %}고정 해제{% else %}고정{% endif %}
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% set expected_author = (session.user_year|string + '기 ' + session.user_name) if session.user_name != '관리자' and session.user_year else session.user_name %}
+                                {% if session.is_admin or notice.author == expected_author %}
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editNoticeModal{{ notice.id }}">
+                                    <i class="bi bi-pencil"></i> 수정
                                 </button>
-                            </form>
-                            {% endif %}
+                                <form method="POST" action="{{ url_for('delete_notice', notice_id=notice.id) }}" 
+                                      style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> 삭제
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- 공지사항 수정 모달 -->
+        {% set expected_author = (session.user_year|string + '기 ' + session.user_name) if session.user_name != '관리자' and session.user_year else session.user_name %}
+        {% if session.is_admin or notice.author == expected_author %}
+        <div class="modal fade" id="editNoticeModal{{ notice.id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-pencil me-2"></i>공지사항 수정
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('edit_notice', notice_id=notice.id) }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">제목</label>
+                                <input type="text" class="form-control" name="title" value="{{ notice.title }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">내용</label>
+                                <textarea class="form-control" name="content" rows="10" required>{{ notice.content }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check me-1"></i>수정
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         {% endfor %}
         {% else %}
         <div class="text-center py-5">
