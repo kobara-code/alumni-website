@@ -801,6 +801,7 @@ def add_user():
     work_address = request.form['work_address']
     home_address = request.form['home_address']
     is_student = 'is_student' in request.form
+    student_year = request.form.get('student_year', '') if is_student else ''
     password = generate_password_hash(f"{name}1234")
     
     try:
@@ -811,7 +812,8 @@ def add_user():
             'phone': phone,
             'work_address': work_address,
             'home_address': home_address,
-            'is_student': is_student
+            'is_student': is_student,
+            'student_year': student_year
         }).execute()
         
         user_id = user_result.data[0]['id']
@@ -860,6 +862,7 @@ def edit_user(user_id):
     work_address = request.form['work_address']
     home_address = request.form['home_address']
     is_student = 'is_student' in request.form
+    student_year = request.form.get('student_year', '') if is_student else ''
     
     try:
         get_supabase().table('users').update({
@@ -868,7 +871,8 @@ def edit_user(user_id):
             'phone': phone,
             'work_address': work_address,
             'home_address': home_address,
-            'is_student': is_student
+            'is_student': is_student,
+            'student_year': student_year
         }).eq('id', user_id).execute()
         
         log_activity('동문 정보 수정', name, f'{graduation_year}기')
