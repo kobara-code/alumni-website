@@ -928,6 +928,31 @@ def edit_user(user_id):
     
     return redirect(url_for('admin_users'))
 
+@app.route('/admin/reset_password/<user_id>', methods=['POST'])
+def reset_password(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    try:
+        # 해당 사용자의 비밀번호를 1234로 재설정
+        new_password = generate_password_hash('1234')
+        user_result = get_supabase().table('users').select('name').eq('id', user_id).execute()
+        
+        if user_result.data:
+            user_name = user_result.data[0]['name']
+            get_supabase().table('users').update({
+                'password': new_password
+            }).eq('id', user_id).execute()
+            
+            log_activity('비밀번호 재설정', user_name, '비밀번호를 1234로 재설정')
+            flash(f'{user_name}의 비밀번호가 1234로 재설정되었습니다.')
+        else:
+            flash('사용자를 찾을 수 없습니다.')
+    except Exception as e:
+        flash(f'비밀번호 재설정 오류: {e}')
+    
+    return redirect(url_for('admin_users'))
+
 @app.route('/admin/reset_all_passwords', methods=['POST'])
 def reset_all_passwords():
     if 'user_id' not in session or not session.get('is_admin'):
