@@ -24,3 +24,5 @@ coverage.xml
 *.sqlite3
 alumni.db
 .env
+.vercel
+.env*.local
