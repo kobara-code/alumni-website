@@ -626,16 +626,23 @@ def upload_image():
             from datetime import datetime
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
-            filename = f"{timestamp}_{ext}"
+            filename = f"{timestamp}.{ext}"
             
-            # 파일 저장 (Vercel에서는 /tmp만 쓰기 가능)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            file.save(filepath)
+            # Supabase Storage에 업로드
+            file_bytes = file.read()
+            
+            # Storage에 업로드 (public bucket 사용)
+            storage_path = f"gallery/{filename}"
+            get_supabase().storage.from_('images').upload(storage_path, file_bytes, {
+                'content-type': file.content_type
+            })
+            
+            # 공개 URL 가져오기
+            public_url = get_supabase().storage.from_('images').get_public_url(storage_path)
             
             # DB에 기록
             get_supabase().table('gallery').insert({
-                'filename': filename,
+                'filename': storage_path,
                 'original_name': file.filename,
                 'uploaded_by': session['user_name']
             }).execute()

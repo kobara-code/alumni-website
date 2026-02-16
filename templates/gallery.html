@@ -47,11 +47,19 @@
     <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
         <div class="card h-100">
             <div class="gallery-item">
+                {% if image.filename.startswith('gallery/') %}
+                <img src="{{ image.filename }}" 
+                     class="card-img-top" 
+                     alt="{{ image.original_name }}" 
+                     style="height: 250px; object-fit: cover; cursor: pointer;"
+                     onclick="showImageModal('{{ image.filename }}', '{{ image.original_name }}', '{{ image.uploaded_by }}', '{{ image.created_at[:10] }}', '{{ image.id }}', '{{ image.uploaded_by }}')">
+                {% else %}
                 <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
                      class="card-img-top" 
                      alt="{{ image.original_name }}" 
                      style="height: 250px; object-fit: cover; cursor: pointer;"
                      onclick="showImageModal('{{ url_for('static', filename='uploads/' + image.filename) }}', '{{ image.original_name }}', '{{ image.uploaded_by }}', '{{ image.created_at[:10] }}', '{{ image.id }}', '{{ image.uploaded_by }}')">
+                {% endif %}
                 <div class="gallery-overlay">
                     <i class="bi bi-zoom-in text-white" style="font-size: 2rem;"></i>
                 </div>
