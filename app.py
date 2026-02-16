@@ -692,6 +692,40 @@ def update_attendance():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/request_change', methods=['POST'])
+def request_change():
+    if 'user_id' not in session or not session.get('is_student'):
+        return jsonify({'success': False})
+    
+    user_id = request.form['user_id']
+    field_name = request.form['field_name']
+    new_value = request.form['new_value']
+    
+    try:
+        # 현재 값 가져오기
+        user_result = get_supabase().table('users').select('*').eq('id', user_id).execute()
+        if not user_result.data:
+            return jsonify({'success': False, 'error': 'User not found'})
+        
+        user = user_result.data[0]
+        old_value = user.get(field_name, '')
+        
+        # 변경 요청 저장
+        get_supabase().table('change_requests').insert({
+            'user_id': user_id,
+            'field_name': field_name,
+            'old_value': old_value,
+            'new_value': new_value,
+            'requested_by': session['user_name'],
+            'status': 'pending'
+        }).execute()
+        
+        log_activity('정보 변경 요청', user['name'], f'{field_name}: {old_value} -> {new_value}')
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/gallery')
 def gallery():
     if 'user_id' not in session:
