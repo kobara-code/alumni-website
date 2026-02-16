@@ -574,6 +574,31 @@ def add_user():
     
     return redirect(url_for('admin_users'))
 
+@app.route('/admin/delete_user/<user_id>', methods=['POST'])
+def delete_user(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    try:
+        # 사용자 이름 가져오기
+        user_result = get_supabase().table('users').select('name').eq('id', user_id).execute()
+        user_name = user_result.data[0]['name'] if user_result.data else 'Unknown'
+        
+        # 관리자는 삭제 불가
+        if user_name == '관리자':
+            flash('관리자 계정은 삭제할 수 없습니다.')
+            return redirect(url_for('admin_users'))
+        
+        # 사용자 삭제 (CASCADE로 관련 데이터도 자동 삭제됨)
+        get_supabase().table('users').delete().eq('id', user_id).execute()
+        
+        log_activity('동문 삭제', user_name)
+        flash(f'{user_name} 동문이 삭제되었습니다.')
+    except Exception as e:
+        flash(f'동문 삭제 오류: {e}')
+    
+    return redirect(url_for('admin_users'))
+
 @app.route('/admin/bulk_upload', methods=['POST'])
 def bulk_upload():
     if 'user_id' not in session or not session.get('is_admin'):

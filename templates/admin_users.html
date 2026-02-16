@@ -135,9 +135,10 @@
                         </td>
                         <td>
                             {% if user[1] != '관리자' %}
-                            <button class="btn btn-sm btn-primary" onclick="editUser({{ user[0] }}, '{{ user[1] }}', {{ user[3] }}, '{{ user[4] or '' }}', '{{ user[5] or '' }}', '{{ user[6] or '' }}', {{ user[8] }})">수정</button>
-                            <form method="POST" action="{{ url_for('delete_user', user_id=user[0]) }}" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
-                                <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+                            <form method="POST" action="{{ url_for('delete_user', user_id=user[0]) }}" style="display:inline;" onsubmit="return confirm('{{ user[1] }} 동문을 정말 삭제하시겠습니까?')">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> 삭제
+                                </button>
                             </form>
                             {% endif %}
                         </td>
