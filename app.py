@@ -849,6 +849,35 @@ def delete_user(user_id):
     
     return redirect(url_for('admin_users'))
 
+@app.route('/admin/edit_user/<user_id>', methods=['POST'])
+def edit_user(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    name = request.form['name']
+    graduation_year = request.form['graduation_year']
+    phone = request.form['phone']
+    work_address = request.form['work_address']
+    home_address = request.form['home_address']
+    is_student = 'is_student' in request.form
+    
+    try:
+        get_supabase().table('users').update({
+            'name': name,
+            'graduation_year': int(graduation_year),
+            'phone': phone,
+            'work_address': work_address,
+            'home_address': home_address,
+            'is_student': is_student
+        }).eq('id', user_id).execute()
+        
+        log_activity('동문 정보 수정', name, f'{graduation_year}기')
+        flash(f'{name} 동문 정보가 수정되었습니다.')
+    except Exception as e:
+        flash(f'동문 정보 수정 오류: {e}')
+    
+    return redirect(url_for('admin_users'))
+
 @app.route('/admin/add_finance', methods=['POST'])
 def add_finance():
     if 'user_id' not in session or not session.get('is_admin'):
