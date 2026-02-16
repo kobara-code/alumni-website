@@ -819,6 +819,21 @@ def admin():
     
     return render_template('admin.html')
 
+@app.route('/admin/logs')
+def admin_logs():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('관리자 권한이 필요합니다.')
+        return redirect(url_for('index'))
+    
+    try:
+        # 최근 100개의 활동 로그 가져오기
+        result = get_supabase().table('activity_logs').select('*').order('created_at', desc=True).limit(100).execute()
+        logs = result.data
+        return render_template('admin_logs.html', logs=logs)
+    except Exception as e:
+        flash(f'활동 로그 로드 오류: {e}')
+        return render_template('admin_logs.html', logs=[])
+
 @app.route('/admin/users')
 def admin_users():
     if 'user_id' not in session or not session.get('is_admin'):

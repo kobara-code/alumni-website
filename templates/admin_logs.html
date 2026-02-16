@@ -3,42 +3,91 @@
 {% block title %}활동 로그 - 금호중앙동문회{% endblock %}
 
 {% block content %}
-<h2>활동 로그</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-clock-history text-primary me-2"></i>활동 로그
+    </h2>
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>관리자 페이지로
+    </a>
+</div>
 
 <div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-list-ul me-2"></i>최근 활동 내역 (최근 100개)
+        </h5>
+    </div>
     <div class="card-body">
+        {% if logs %}
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>시간</th>
-                        <th>작업</th>
-                        <th>대상</th>
-                        <th>세부사항</th>
-                        <th>수행자</th>
+                        <th style="width: 15%;">
+                            <i class="bi bi-calendar me-1"></i>날짜/시간
+                        </th>
+                        <th style="width: 15%;">
+                            <i class="bi bi-tag me-1"></i>활동
+                        </th>
+                        <th style="width: 15%;">
+                            <i class="bi bi-person me-1"></i>대상
+                        </th>
+                        <th style="width: 30%;">
+                            <i class="bi bi-info-circle me-1"></i>상세 내용
+                        </th>
+                        <th style="width: 15%;">
+                            <i class="bi bi-person-badge me-1"></i>수행자
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in logs %}
                     <tr>
-                        <td>{{ log[5][:19] }}</td>
-                        <td>{{ log[1] }}</td>
-                        <td>{{ log[2] or '-' }}</td>
-                        <td>{{ log[3] or '-' }}</td>
-                        <td>{{ log[4] }}</td>
+                        <td>
+                            <small>{{ log.created_at[:19].replace('T', ' ') if log.created_at else '-' }}</small>
+                        </td>
+                        <td>
+                            {% if '로그인' in log.action %}
+                                <span class="badge bg-success">{{ log.action }}</span>
+                            {% elif '추가' in log.action or '등록' in log.action %}
+                                <span class="badge bg-primary">{{ log.action }}</span>
+                            {% elif '삭제' in log.action %}
+                                <span class="badge bg-danger">{{ log.action }}</span>
+                            {% elif '수정' in log.action or '변경' in log.action %}
+                                <span class="badge bg-warning">{{ log.action }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ log.action }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.target_user or '-' }}</td>
+                        <td>
+                            <small class="text-muted">{{ log.details or '-' }}</small>
+                        </td>
+                        <td>{{ log.performed_by or '-' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        
-        {% if not logs %}
-        <div class="alert alert-info">활동 로그가 없습니다.</div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-clock-history text-muted" style="font-size: 5rem;"></i>
+            <h4 class="text-muted mt-3">활동 로그가 없습니다</h4>
+            <p class="text-muted">사용자 활동이 기록되면 여기에 표시됩니다.</p>
+        </div>
         {% endif %}
     </div>
 </div>
 
 <div class="mt-3">
-    <a href="{{ url_for('admin_settings') }}" class="btn btn-secondary">설정으로 돌아가기</a>
+    <div class="alert alert-info">
+        <h6><i class="bi bi-info-circle me-1"></i>활동 로그 안내</h6>
+        <ul class="mb-0">
+            <li>최근 100개의 활동 내역이 표시됩니다.</li>
+            <li>로그인, 동문 추가/수정/삭제, 회계 관리, 공지사항 관리 등의 활동이 기록됩니다.</li>
+            <li>활동 로그는 시스템 관리 및 보안을 위해 자동으로 기록됩니다.</li>
+        </ul>
+    </div>
 </div>
 {% endblock %}
