@@ -327,7 +327,62 @@ def notices():
         flash(f'공지사항 로드 오류: {e}')
         return render_template('notices.html', notices=[])
 
-@app.route('/notice/<int:notice_id>')
+@app.route('/add_notice', methods=['POST'])
+def add_notice():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    title = request.form['title']
+    content = request.form['content']
+    
+    try:
+        author_name = session['user_name']
+        if session['user_name'] != '관리자' and session.get('user_year'):
+            author_name = f"{session.get('user_year')}기 {session['user_name']}"
+        
+        get_supabase().table('notices').insert({
+            'title': title,
+            'content': content,
+            'author': author_name
+        }).execute()
+        
+        log_activity('공지사항 작성', session['user_name'], title)
+        flash('공지사항이 등록되었습니다.')
+    except Exception as e:
+        flash(f'공지사항 등록 오류: {e}')
+    
+    return redirect(url_for('notices'))
+
+@app.route('/delete_notice/<notice_id>', methods=['POST'])
+def delete_notice(notice_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        # 공지사항 정보 가져오기
+        notice_result = get_supabase().table('notices').select('*').eq('id', notice_id).execute()
+        if not notice_result.data:
+            flash('공지사항을 찾을 수 없습니다.')
+            return redirect(url_for('notices'))
+        
+        notice = notice_result.data[0]
+        
+        # 본인이 작성한 글이거나 관리자만 삭제 가능
+        if notice['author'] != session['user_name'] and not session.get('is_admin'):
+            flash('삭제 권한이 없습니다.')
+            return redirect(url_for('notices'))
+        
+        # 공지사항 삭제 (CASCADE로 댓글도 자동 삭제)
+        get_supabase().table('notices').delete().eq('id', notice_id).execute()
+        
+        log_activity('공지사항 삭제', session['user_name'], notice['title'])
+        flash('공지사항이 삭제되었습니다.')
+    except Exception as e:
+        flash(f'공지사항 삭제 오류: {e}')
+    
+    return redirect(url_for('notices'))
+
+@app.route('/notice/<notice_id>')
 def notice_detail(notice_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -515,6 +570,84 @@ def gallery():
     except Exception as e:
         flash(f'갤러리 로드 오류: {e}')
         return render_template('gallery.html', images=[])
+
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if 'image' not in request.files:
+        flash('이미지를 선택해주세요.')
+        return redirect(url_for('gallery'))
+    
+    file = request.files['image']
+    if file.filename == '':
+        flash('이미지를 선택해주세요.')
+        return redirect(url_for('gallery'))
+    
+    if file:
+        try:
+            # 파일명 생성
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+            filename = f"{timestamp}_{ext}"
+            
+            # 파일 저장 (Vercel에서는 /tmp만 쓰기 가능)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            file.save(filepath)
+            
+            # DB에 기록
+            get_supabase().table('gallery').insert({
+                'filename': filename,
+                'original_name': file.filename,
+                'uploaded_by': session['user_name']
+            }).execute()
+            
+            log_activity('사진 업로드', session['user_name'], filename)
+            flash('사진이 업로드되었습니다.')
+        except Exception as e:
+            flash(f'사진 업로드 오류: {e}')
+    
+    return redirect(url_for('gallery'))
+
+@app.route('/delete_image/<image_id>', methods=['POST'])
+def delete_image(image_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        # 이미지 정보 가져오기
+        image_result = get_supabase().table('gallery').select('*').eq('id', image_id).execute()
+        if not image_result.data:
+            flash('이미지를 찾을 수 없습니다.')
+            return redirect(url_for('gallery'))
+        
+        image = image_result.data[0]
+        
+        # 본인이 올린 사진이거나 관리자만 삭제 가능
+        if image['uploaded_by'] != session['user_name'] and not session.get('is_admin'):
+            flash('삭제 권한이 없습니다.')
+            return redirect(url_for('gallery'))
+        
+        # DB에서 삭제
+        get_supabase().table('gallery').delete().eq('id', image_id).execute()
+        
+        # 파일 삭제 시도 (실패해도 계속 진행)
+        try:
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], image['filename'])
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except:
+            pass
+        
+        log_activity('사진 삭제', session['user_name'], image['filename'])
+        flash('사진이 삭제되었습니다.')
+    except Exception as e:
+        flash(f'사진 삭제 오류: {e}')
+    
+    return redirect(url_for('gallery'))
 
 # 관리자 라우트들
 @app.route('/admin')

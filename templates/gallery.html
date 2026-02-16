@@ -7,9 +7,38 @@
     <h2>
         <i class="bi bi-images text-primary me-2"></i>동문회 갤러리
     </h2>
-    {% if session.is_admin %}
-    <span class="text-muted">(관리자 로그인됨)</span>
-    {% endif %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+        <i class="bi bi-upload me-1"></i>사진 업로드
+    </button>
+</div>
+
+<!-- 사진 업로드 모달 -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-upload me-2"></i>사진 업로드
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('upload_image') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">사진 선택</label>
+                        <input type="file" class="form-control" name="image" accept="image/*" required>
+                        <div class="form-text">JPG, PNG, GIF 형식의 이미지를 업로드할 수 있습니다.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i>업로드
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 {% if images %}
@@ -18,23 +47,23 @@
     <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
         <div class="card h-100">
             <div class="gallery-item">
-                <img src="{{ url_for('static', filename='uploads/' + image[1]) }}" 
+                <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
                      class="card-img-top" 
-                     alt="{{ image[2] }}" 
+                     alt="{{ image.original_name }}" 
                      style="height: 250px; object-fit: cover; cursor: pointer;"
-                     onclick="showImageModal('{{ url_for('static', filename='uploads/' + image[1]) }}', '{{ image[2] }}', '{{ image[3] }}', '{{ image[4][:10] }}')">
+                     onclick="showImageModal('{{ url_for('static', filename='uploads/' + image.filename) }}', '{{ image.original_name }}', '{{ image.uploaded_by }}', '{{ image.created_at[:10] }}', '{{ image.id }}', '{{ image.uploaded_by }}')">
                 <div class="gallery-overlay">
                     <i class="bi bi-zoom-in text-white" style="font-size: 2rem;"></i>
                 </div>
             </div>
             <div class="card-body">
-                <h6 class="card-title text-truncate">{{ image[2] }}</h6>
+                <h6 class="card-title text-truncate">{{ image.original_name }}</h6>
                 <div class="d-flex justify-content-between align-items-center">
                     <small class="text-muted">
-                        <i class="bi bi-person me-1"></i>{{ image[3] }}
+                        <i class="bi bi-person me-1"></i>{{ image.uploaded_by }}
                     </small>
                     <small class="text-muted">
-                        <i class="bi bi-calendar me-1"></i>{{ image[4][:10] }}
+                        <i class="bi bi-calendar me-1"></i>{{ image.created_at[:10] }}
                     </small>
                 </div>
             </div>
@@ -69,12 +98,27 @@
 </div>
 
 <script>
-function showImageModal(src, title, uploader, date) {
+function showImageModal(src, title, uploader, date, imageId, uploadedBy) {
     document.getElementById('modalImage').src = src;
     document.getElementById('imageModalTitle').textContent = title;
+    
+    let deleteBtn = '';
+    {% if session.is_admin or session.user_name %}
+    if (uploader === '{{ session.user_name }}' || {{ 'true' if session.is_admin else 'false' }}) {
+        deleteBtn = `
+            <form method="POST" action="/delete_image/${imageId}" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="bi bi-trash me-1"></i>삭제
+                </button>
+            </form>
+        `;
+    }
+    {% endif %}
+    
     document.getElementById('imageInfo').innerHTML = `
         <i class="bi bi-person me-1"></i>${uploader} | 
         <i class="bi bi-calendar me-1"></i>${date}
+        ${deleteBtn}
     `;
     new bootstrap.Modal(document.getElementById('imageModal')).show();
 }

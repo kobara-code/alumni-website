@@ -7,9 +7,41 @@
     <h2>
         <i class="bi bi-megaphone text-primary me-2"></i>공지사항
     </h2>
-    {% if session.is_admin %}
-    <span class="text-muted">(관리자 로그인됨)</span>
-    {% endif %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#noticeModal">
+        <i class="bi bi-plus me-1"></i>공지 작성
+    </button>
+</div>
+
+<!-- 공지사항 작성 모달 -->
+<div class="modal fade" id="noticeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>공지사항 작성
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_notice') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">제목</label>
+                        <input type="text" class="form-control" name="title" placeholder="공지사항 제목을 입력하세요" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">내용</label>
+                        <textarea class="form-control" name="content" rows="10" placeholder="공지사항 내용을 입력하세요" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check me-1"></i>등록
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <div class="row">
@@ -21,27 +53,30 @@
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="flex-grow-1">
                         <h5 class="card-title">
-                            <a href="{{ url_for('notice_detail', notice_id=notice[0]) }}" 
+                            <a href="{{ url_for('notice_detail', notice_id=notice.id) }}" 
                                class="text-decoration-none text-dark">
                                 <i class="bi bi-file-text text-primary me-2"></i>
-                                {{ notice[1] }}
+                                {{ notice.title }}
                             </a>
                         </h5>
                         <p class="card-text text-muted">
-                            {{ notice[2][:150] }}{% if notice[2]|length > 150 %}...{% endif %}
+                            {{ notice.content[:150] }}{% if notice.content|length > 150 %}...{% endif %}
                         </p>
-                        <div class="d-flex align-items-center text-muted">
-                            <small>
-                                <i class="bi bi-person me-1"></i>{{ notice[5] }}
+                        <div class="d-flex align-items-center justify-content-between">
+                            <small class="text-muted">
+                                <i class="bi bi-person me-1"></i>{{ notice.author }}
                                 <span class="mx-2">|</span>
-                                <i class="bi bi-calendar me-1"></i>{{ notice[4][:16] }}
+                                <i class="bi bi-calendar me-1"></i>{{ notice.created_at[:16] }}
                             </small>
+                            {% if session.is_admin or notice.author == session.user_name %}
+                            <form method="POST" action="{{ url_for('delete_notice', notice_id=notice.id) }}" 
+                                  style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> 삭제
+                                </button>
+                            </form>
+                            {% endif %}
                         </div>
-                    </div>
-                    <div class="ms-3">
-                        {% if notice[3] %}
-                        <i class="bi bi-image text-info" title="이미지 첨부"></i>
-                        {% endif %}
                     </div>
                 </div>
             </div>
