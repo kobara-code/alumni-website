@@ -394,11 +394,9 @@ def finances():
             finances = finances_result.data
         
         # 수입/지출 합계 계산
-        income_result = get_supabase().rpc('sum_finances_by_type', {'finance_type': 'income'}).execute()
-        total_income = income_result.data or 0
-        
-        expense_result = get_supabase().rpc('sum_finances_by_type', {'finance_type': 'expense'}).execute()
-        total_expense = expense_result.data or 0
+        all_finances = get_supabase().table('finances').select('type, amount').execute()
+        total_income = sum(f['amount'] for f in all_finances.data if f['type'] == 'income')
+        total_expense = sum(f['amount'] for f in all_finances.data if f['type'] == 'expense')
         
         bank_info = {}
         if bank_info_public or session.get('is_admin'):
@@ -430,43 +428,43 @@ def events():
     search = request.args.get('search', '')
     
     try:
-        # 사용자와 이벤트 정보 조인
-        query = """
-        SELECT u.id, u.name, u.graduation_year, u.phone, 
-               COALESCE(u.work_address, '') as work_address, 
-               COALESCE(u.home_address, '') as home_address,
-               COALESCE(e.attendance_status, '무응답') as status, 
-               COALESCE(e.notes, '') as notes
-        FROM users u 
-        LEFT JOIN events e ON u.id = e.user_id 
-        WHERE u.name != '관리자'
-        """
-        
-        params = []
-        if status_filter:
-            query += " AND COALESCE(e.attendance_status, '무응답') = %s"
-            params.append(status_filter)
+        # 모든 사용자 가져오기
+        users_query = get_supabase().table('users').select('id, name, graduation_year, phone, work_address, home_address').neq('name', '관리자')
         
         if search:
-            query += " AND u.name ILIKE %s"
-            params.append(f'%{search}%')
+            users_query = users_query.ilike('name', f'%{search}%')
         
-        query += " ORDER BY u.graduation_year DESC, u.name"
+        users_result = users_query.order('graduation_year', desc=True).order('name').execute()
+        users = users_result.data
         
-        users_events_result = get_supabase().rpc('execute_sql', {'query': query, 'params': params}).execute()
-        users_events = users_events_result.data
+        # 모든 이벤트 가져오기
+        events_result = get_supabase().table('events').select('user_id, attendance_status, notes').execute()
+        events_dict = {event['user_id']: event for event in events_result.data}
+        
+        # 사용자와 이벤트 정보 결합
+        users_events = []
+        for user in users:
+            event = events_dict.get(user['id'], {})
+            users_events.append({
+                'id': user['id'],
+                'name': user['name'],
+                'graduation_year': user['graduation_year'],
+                'phone': user.get('phone', ''),
+                'work_address': user.get('work_address', ''),
+                'home_address': user.get('home_address', ''),
+                'status': event.get('attendance_status', '무응답'),
+                'notes': event.get('notes', '')
+            })
+        
+        # 상태 필터 적용
+        if status_filter:
+            users_events = [u for u in users_events if u['status'] == status_filter]
         
         # 상태별 인원 수 계산
-        status_counts_query = """
-        SELECT COALESCE(e.attendance_status, '무응답') as status, COUNT(*) 
-        FROM users u 
-        LEFT JOIN events e ON u.id = e.user_id 
-        WHERE u.name != '관리자' 
-        GROUP BY COALESCE(e.attendance_status, '무응답')
-        """
-        
-        status_counts_result = get_supabase().rpc('execute_sql', {'query': status_counts_query}).execute()
-        status_counts = {item['status']: item['count'] for item in status_counts_result.data}
+        status_counts = {}
+        for user_event in users_events:
+            status = user_event['status']
+            status_counts[status] = status_counts.get(status, 0) + 1
         
         return render_template('events.html', users_events=users_events, status_counts=status_counts, 
                              status_filter=status_filter, search=search)
