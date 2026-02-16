@@ -74,6 +74,16 @@
                         <i class="bi bi-calendar me-1"></i>{{ image.created_at[:10] }}
                     </small>
                 </div>
+                {% if session.is_admin or image.uploaded_by == session.user_name %}
+                <div class="mt-2">
+                    <form method="POST" action="{{ url_for('delete_image', image_id=image.id) }}" 
+                          style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                        <button type="submit" class="btn btn-sm btn-danger w-100">
+                            <i class="bi bi-trash"></i> 삭제
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

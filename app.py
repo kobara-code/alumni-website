@@ -673,16 +673,16 @@ def delete_image(image_id):
             flash('삭제 권한이 없습니다.')
             return redirect(url_for('gallery'))
         
+        # Supabase Storage에서 파일 삭제 시도
+        try:
+            if image['filename'].startswith('gallery/'):
+                get_supabase().storage.from_('images').remove([image['filename']])
+        except Exception as storage_error:
+            print(f"Storage 삭제 오류: {storage_error}")
+            # Storage 삭제 실패해도 DB는 삭제
+        
         # DB에서 삭제
         get_supabase().table('gallery').delete().eq('id', image_id).execute()
-        
-        # 파일 삭제 시도 (실패해도 계속 진행)
-        try:
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], image['filename'])
-            if os.path.exists(filepath):
-                os.remove(filepath)
-        except:
-            pass
         
         log_activity('사진 삭제', session['user_name'], image['filename'])
         flash('사진이 삭제되었습니다.')
