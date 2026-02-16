@@ -22,8 +22,8 @@ def format_phone(phone):
     return phone
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+app.config['UPLOAD_FOLDER'] = '/tmp/uploads'  # Vercel serverless는 /tmp만 쓰기 가능
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {'pdf', 'txt', 'csv'}
@@ -95,7 +95,11 @@ def parse_member_data(text):
         members.append(current_member)
     
     return members
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Vercel serverless 환경에서는 /tmp만 쓰기 가능
+try:
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+except:
+    pass  # Vercel에서는 /tmp가 이미 존재
 
 # Jinja2 필터 등록
 app.jinja_env.filters['format_phone'] = format_phone
@@ -114,6 +118,15 @@ def hash_sensitive_data(data):
 def init_db():
     """Supabase 테이블 초기화 및 기본 데이터 설정"""
     try:
+        # Supabase 연결 확인
+        if not SUPABASE_URL or SUPABASE_URL == 'https://your-project.supabase.co':
+            print("Warning: SUPABASE_URL not configured")
+            return
+        
+        if not SUPABASE_KEY or SUPABASE_KEY == 'your-anon-key':
+            print("Warning: SUPABASE_ANON_KEY not configured")
+            return
+        
         # 기본 관리자 계정 확인 및 생성
         admin_check = supabase.table('users').select('*').eq('name', '관리자').execute()
         if not admin_check.data:
@@ -142,6 +155,7 @@ def init_db():
                 
     except Exception as e:
         print(f"Database initialization error: {e}")
+        # Vercel에서는 에러가 발생해도 앱이 시작되도록 함
 
 def log_activity(action, target_user=None, details=None):
     try:
