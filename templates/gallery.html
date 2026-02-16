@@ -47,25 +47,11 @@
     <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
         <div class="card h-100">
             <div class="gallery-item">
-                {% if image.filename.startswith('data:') %}
                 <img src="{{ image.filename }}" 
                      class="card-img-top" 
                      alt="{{ image.original_name }}" 
                      style="height: 250px; object-fit: cover; cursor: pointer;"
-                     onclick="showImageModal('{{ image.filename }}', '{{ image.original_name }}', '{{ image.uploaded_by }}', '{{ image.created_at[:10] }}', '{{ image.id }}', '{{ image.uploaded_by }}')">
-                {% elif image.filename.startswith('gallery/') %}
-                <img src="{{ image.filename }}" 
-                     class="card-img-top" 
-                     alt="{{ image.original_name }}" 
-                     style="height: 250px; object-fit: cover; cursor: pointer;"
-                     onclick="showImageModal('{{ image.filename }}', '{{ image.original_name }}', '{{ image.uploaded_by }}', '{{ image.created_at[:10] }}', '{{ image.id }}', '{{ image.uploaded_by }}')">
-                {% else %}
-                <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
-                     class="card-img-top" 
-                     alt="{{ image.original_name }}" 
-                     style="height: 250px; object-fit: cover; cursor: pointer;"
-                     onclick="showImageModal('{{ url_for('static', filename='uploads/' + image.filename) }}', '{{ image.original_name }}', '{{ image.uploaded_by }}', '{{ image.created_at[:10] }}', '{{ image.id }}', '{{ image.uploaded_by }}')">
-                {% endif %}
+                     onclick="showImageModal('{{ image.id }}')">
                 <div class="gallery-overlay">
                     <i class="bi bi-zoom-in text-white" style="font-size: 2rem;"></i>
                 </div>
@@ -77,7 +63,7 @@
                         <i class="bi bi-person me-1"></i>{{ image.uploaded_by }}
                     </small>
                     <small class="text-muted">
-                        <i class="bi bi-calendar me-1"></i>{{ image.created_at[:10] }}
+                        <i class="bi bi-calendar me-1"></i>{{ image.created_at[:10] if image.created_at else '-' }}
                     </small>
                 </div>
                 {% if session.is_admin or image.uploaded_by == session.user_name %}
@@ -122,15 +108,28 @@
 </div>
 
 <script>
-function showImageModal(src, title, uploader, date, imageId, uploadedBy) {
-    document.getElementById('modalImage').src = src;
-    document.getElementById('imageModalTitle').textContent = title;
+const images = {{ images | tojson }};
+
+function showImageModal(imageId) {
+    const image = images.find(img => img.id === imageId);
+    if (!image) return;
+    
+    document.getElementById('modalImage').src = image.filename;
+    document.getElementById('imageModalTitle').textContent = image.original_name;
     
     let deleteBtn = '';
-    {% if session.is_admin or session.user_name %}
-    if (uploader === '{{ session.user_name }}' || {{ 'true' if session.is_admin else 'false' }}) {
+    {% if session.is_admin %}
+    deleteBtn = `
+        <form method="POST" action="/delete_image/${imageId}" style="display:inline; margin-left: 10px;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+            <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash me-1"></i>삭제
+            </button>
+        </form>
+    `;
+    {% elif session.user_name %}
+    if (image.uploaded_by === '{{ session.user_name }}') {
         deleteBtn = `
-            <form method="POST" action="/delete_image/${imageId}" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+            <form method="POST" action="/delete_image/${imageId}" style="display:inline; margin-left: 10px;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
                 <button type="submit" class="btn btn-sm btn-danger">
                     <i class="bi bi-trash me-1"></i>삭제
                 </button>
@@ -139,8 +138,9 @@ function showImageModal(src, title, uploader, date, imageId, uploadedBy) {
     }
     {% endif %}
     
+    const date = image.created_at ? image.created_at.substring(0, 10) : '-';
     document.getElementById('imageInfo').innerHTML = `
-        <i class="bi bi-person me-1"></i>${uploader} | 
+        <i class="bi bi-person me-1"></i>${image.uploaded_by || '알 수 없음'} | 
         <i class="bi bi-calendar me-1"></i>${date}
         ${deleteBtn}
     `;
