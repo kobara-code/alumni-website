@@ -131,11 +131,11 @@
                 {% for image in gallery_images %}
                 <div class="col-lg-2 col-md-3 col-sm-4 col-6">
                     <div class="gallery-item">
-                        <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                        <img src="{{ image.filename }}" 
                              class="img-fluid rounded" 
                              alt="{{ image.original_name }}" 
                              style="height: 120px; object-fit: cover; width: 100%; cursor: pointer;"
-                             onclick="showImageModal('{{ url_for('static', filename='uploads/' + image.filename) }}', '{{ image.original_name }}')">
+                             onclick="showImageModal('{{ image.filename }}', '{{ image.original_name }}')">
                         <div class="gallery-overlay">
                             <i class="bi bi-zoom-in text-white" style="font-size: 2rem;"></i>
                         </div>
