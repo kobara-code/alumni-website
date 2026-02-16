@@ -239,6 +239,7 @@ def login():
                 session['user_year'] = user.get('graduation_year')
                 session['is_admin'] = user.get('is_admin', False)
                 session['is_student'] = user.get('is_student', False)
+                session['student_role'] = user.get('student_role', '')
                 log_activity('로그인', user['name'])
                 return redirect(url_for('index'))
             else:
@@ -555,6 +556,10 @@ def finances():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # 관리자 또는 총무 권한 확인
+    is_treasurer = session.get('student_role') == '총무'
+    can_manage_finances = session.get('is_admin') or is_treasurer
+    
     try:
         # 설정 확인
         finance_public_result = get_supabase().table('settings').select('value').eq('key', 'finance_public').execute()
@@ -566,12 +571,12 @@ def finances():
         bank_info_public_result = get_supabase().table('settings').select('value').eq('key', 'bank_info_public').execute()
         bank_info_public = bank_info_public_result.data[0]['value'] == '1' if bank_info_public_result.data else True
         
-        if not finance_public and not session.get('is_admin'):
+        if not finance_public and not can_manage_finances:
             flash('회계 정보는 현재 비공개 상태입니다.')
             return redirect(url_for('index'))
         
         finances = []
-        if finance_details_public or session.get('is_admin'):
+        if finance_details_public or can_manage_finances:
             finances_result = get_supabase().table('finances').select('*').order('date', desc=True).execute()
             finances = finances_result.data
         
@@ -581,7 +586,7 @@ def finances():
         total_expense = sum(f['amount'] for f in all_finances.data if f['type'] == 'expense')
         
         bank_info = {}
-        if bank_info_public or session.get('is_admin'):
+        if bank_info_public or can_manage_finances:
             bank_settings = get_supabase().table('settings').select('key, value').in_('key', ['bank_name', 'account_number', 'account_holder']).execute()
             bank_info = {item['key']: item['value'] for item in bank_settings.data}
         
@@ -591,14 +596,16 @@ def finances():
                              total_income=total_income, total_expense=total_expense, balance=balance,
                              bank_info=bank_info, finance_public=finance_public,
                              finance_details_public=finance_details_public,
-                             bank_info_public=bank_info_public)
+                             bank_info_public=bank_info_public,
+                             can_manage_finances=can_manage_finances)
     except Exception as e:
         flash(f'회계 정보 로드 오류: {e}')
         return render_template('finances.html', finances=[], 
                              total_income=0, total_expense=0, balance=0,
                              bank_info={}, finance_public=True,
                              finance_details_public=True,
-                             bank_info_public=True)
+                             bank_info_public=True,
+                             can_manage_finances=can_manage_finances)
 
 @app.route('/events')
 def events():
@@ -889,8 +896,14 @@ def edit_user(user_id):
 
 @app.route('/admin/add_finance', methods=['POST'])
 def add_finance():
-    if 'user_id' not in session or not session.get('is_admin'):
-        return redirect(url_for('index'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # 관리자 또는 총무만 회계 추가 가능
+    is_treasurer = session.get('student_role') == '총무'
+    if not session.get('is_admin') and not is_treasurer:
+        flash('권한이 없습니다.')
+        return redirect(url_for('finances'))
     
     finance_type = request.form['type']
     description = request.form['description']
@@ -913,8 +926,14 @@ def add_finance():
 
 @app.route('/admin/delete_finance/<finance_id>', methods=['POST'])
 def delete_finance(finance_id):
-    if 'user_id' not in session or not session.get('is_admin'):
-        return redirect(url_for('index'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # 관리자 또는 총무만 회계 삭제 가능
+    is_treasurer = session.get('student_role') == '총무'
+    if not session.get('is_admin') and not is_treasurer:
+        flash('권한이 없습니다.')
+        return redirect(url_for('finances'))
     
     try:
         get_supabase().table('finances').delete().eq('id', finance_id).execute()
@@ -922,6 +941,37 @@ def delete_finance(finance_id):
         flash('회계 내역이 삭제되었습니다.')
     except Exception as e:
         flash(f'회계 내역 삭제 오류: {e}')
+    
+    return redirect(url_for('finances'))
+
+@app.route('/admin/update_bank_info', methods=['POST'])
+def update_bank_info():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # 관리자 또는 총무만 계좌 정보 수정 가능
+    is_treasurer = session.get('student_role') == '총무'
+    if not session.get('is_admin') and not is_treasurer:
+        flash('권한이 없습니다.')
+        return redirect(url_for('finances'))
+    
+    bank_name = request.form['bank_name']
+    account_number = request.form['account_number']
+    account_holder = request.form['account_holder']
+    
+    try:
+        # 각 설정 업데이트 또는 삽입
+        for key, value in [('bank_name', bank_name), ('account_number', account_number), ('account_holder', account_holder)]:
+            existing = get_supabase().table('settings').select('*').eq('key', key).execute()
+            if existing.data:
+                get_supabase().table('settings').update({'value': value}).eq('key', key).execute()
+            else:
+                get_supabase().table('settings').insert({'key': key, 'value': value}).execute()
+        
+        log_activity('계좌 정보 수정', None, f'{bank_name} {account_number}')
+        flash('계좌 정보가 수정되었습니다.')
+    except Exception as e:
+        flash(f'계좌 정보 수정 오류: {e}')
     
     return redirect(url_for('finances'))
 

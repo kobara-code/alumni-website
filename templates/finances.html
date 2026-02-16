@@ -39,7 +39,7 @@
     </div>
 </div>
 
-{% if session.is_admin %}
+{% if can_manage_finances %}
 <div class="card mb-4">
     <div class="card-header">
         <h5 class="mb-0">
@@ -90,7 +90,7 @@
                         <th><i class="bi bi-file-text me-1"></i>내역</th>
                         <th><i class="bi bi-currency-dollar me-1"></i>금액</th>
                         <th><i class="bi bi-person me-1"></i>등록자</th>
-                        {% if session.is_admin %}
+                        {% if can_manage_finances %}
                         <th><i class="bi bi-gear me-1"></i>작업</th>
                         {% endif %}
                     </tr>
@@ -119,7 +119,7 @@
                             {% endif %}
                         </td>
                         <td>{{ finance.created_by }}</td>
-                        {% if session.is_admin %}
+                        {% if can_manage_finances %}
                         <td>
                             <form method="POST" action="{{ url_for('delete_finance', finance_id=finance.id) }}" 
                                   style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
@@ -144,13 +144,18 @@
     </div>
 </div>
 
-{% if bank_info_public or session.is_admin %}
+{% if bank_info_public or can_manage_finances %}
 <div class="mt-4">
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
                 <i class="bi bi-bank me-2"></i>후원 계좌 안내
             </h5>
+            {% if can_manage_finances %}
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editBankModal">
+                <i class="bi bi-pencil me-1"></i>수정
+            </button>
+            {% endif %}
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -187,7 +192,43 @@
 </div>
 {% endif %}
 
-{% if session.is_admin %}
+{% if can_manage_finances %}
+<!-- 계좌 정보 수정 모달 -->
+<div class="modal fade" id="editBankModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-bank me-2"></i>계좌 정보 수정
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('update_bank_info') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">은행명</label>
+                        <input type="text" class="form-control" name="bank_name" value="{{ bank_info.get('bank_name', '') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">계좌번호</label>
+                        <input type="text" class="form-control" name="account_number" value="{{ bank_info.get('account_number', '') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">예금주</label>
+                        <input type="text" class="form-control" name="account_holder" value="{{ bank_info.get('account_holder', '') }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check me-1"></i>저장
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- 회계 수정 모달 -->
 <div class="modal fade" id="editFinanceModal" tabindex="-1">
     <div class="modal-dialog">
