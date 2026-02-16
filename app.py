@@ -423,6 +423,41 @@ def add_comment():
         flash(f'댓글 작성 오류: {e}')
         return redirect(url_for('notice_detail', notice_id=notice_id))
 
+@app.route('/delete_comment/<comment_id>', methods=['POST'])
+def delete_comment(comment_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        # 댓글 정보 가져오기
+        comment_result = get_supabase().table('comments').select('*').eq('id', comment_id).execute()
+        if not comment_result.data:
+            flash('댓글을 찾을 수 없습니다.')
+            return redirect(url_for('notices'))
+        
+        comment = comment_result.data[0]
+        notice_id = comment['notice_id']
+        
+        # 본인이 작성한 댓글이거나 관리자만 삭제 가능
+        author_name = session['user_name']
+        if session['user_name'] != '관리자' and session.get('user_year'):
+            author_name = f"{session.get('user_year')}기 {session['user_name']}"
+        
+        if comment['author'] != author_name and not session.get('is_admin'):
+            flash('삭제 권한이 없습니다.')
+            return redirect(url_for('notice_detail', notice_id=notice_id))
+        
+        # 댓글 삭제
+        get_supabase().table('comments').delete().eq('id', comment_id).execute()
+        
+        log_activity('댓글 삭제', session['user_name'], f'공지사항 ID: {notice_id}')
+        flash('댓글이 삭제되었습니다.')
+        
+        return redirect(url_for('notice_detail', notice_id=notice_id))
+    except Exception as e:
+        flash(f'댓글 삭제 오류: {e}')
+        return redirect(url_for('notices'))
+
 @app.route('/finances')
 def finances():
     if 'user_id' not in session:

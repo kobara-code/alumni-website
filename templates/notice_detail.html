@@ -76,6 +76,15 @@
                                 </div>
                             </div>
                         </div>
+                        {% set expected_author = (session.user_year|string + '기 ' + session.user_name) if session.user_name != '관리자' and session.user_year else session.user_name %}
+                        {% if comment.author == expected_author or session.is_admin %}
+                        <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" 
+                              style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i> 삭제
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                     <p class="mb-0" style="white-space: pre-line;">{{ comment.content }}</p>
                 </div>
