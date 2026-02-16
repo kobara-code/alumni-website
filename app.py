@@ -597,6 +597,44 @@ def delete_user(user_id):
     
     return redirect(url_for('admin_users'))
 
+@app.route('/admin/add_finance', methods=['POST'])
+def add_finance():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    finance_type = request.form['type']
+    description = request.form['description']
+    amount = request.form['amount']
+    
+    try:
+        get_supabase().table('finances').insert({
+            'type': finance_type,
+            'description': description,
+            'amount': int(amount),
+            'created_by': session['user_name']
+        }).execute()
+        
+        log_activity('회계 내역 추가', None, f'{finance_type}: {description} - {amount}원')
+        flash('회계 내역이 추가되었습니다.')
+    except Exception as e:
+        flash(f'회계 내역 추가 오류: {e}')
+    
+    return redirect(url_for('finances'))
+
+@app.route('/admin/delete_finance/<finance_id>', methods=['POST'])
+def delete_finance(finance_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    try:
+        get_supabase().table('finances').delete().eq('id', finance_id).execute()
+        log_activity('회계 내역 삭제', None, f'ID: {finance_id}')
+        flash('회계 내역이 삭제되었습니다.')
+    except Exception as e:
+        flash(f'회계 내역 삭제 오류: {e}')
+    
+    return redirect(url_for('finances'))
+
 @app.route('/admin/bulk_upload', methods=['POST'])
 def bulk_upload():
     if 'user_id' not in session or not session.get('is_admin'):

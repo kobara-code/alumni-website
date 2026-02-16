@@ -8,9 +8,7 @@
         <i class="bi bi-megaphone text-primary me-2"></i>공지사항
     </h2>
     {% if session.is_admin %}
-    <a href="{{ url_for('admin_notices') }}" class="btn btn-primary">
-        <i class="bi bi-plus me-1"></i>공지사항 작성
-    </a>
+    <span class="text-muted">(관리자 로그인됨)</span>
     {% endif %}
 </div>
 
