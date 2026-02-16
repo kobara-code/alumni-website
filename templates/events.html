@@ -70,7 +70,10 @@
                 {% if session.is_student %}
                 <td>
                     <button class="btn btn-sm btn-primary" onclick="showUpdateModal('{{ user.id }}', '{{ user.name }}', '{{ user.status }}', '{{ user.notes or '' }}')">
-                        수정
+                        참석상태
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="showChangeModal('{{ user.id }}', '{{ user.name }}', '{{ user.phone or '' }}', '{{ user.work_address or '' }}', '{{ user.home_address or '' }}')">
+                        정보수정
                     </button>
                 </td>
                 {% endif %}

@@ -5,6 +5,27 @@
 {% block content %}
 <h2>동문 관리</h2>
 
+<div class="card mb-4 bg-warning bg-opacity-10 border-warning">
+    <div class="card-header bg-warning bg-opacity-25">
+        <h5 class="mb-0">
+            <i class="bi bi-shield-lock me-2"></i>비밀번호 관리
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p class="mb-1"><strong>전체 비밀번호 재설정</strong></p>
+                <small class="text-muted">관리자를 제외한 모든 사용자의 비밀번호를 '1234'로 재설정합니다.</small>
+            </div>
+            <form method="POST" action="{{ url_for('reset_all_passwords') }}" onsubmit="return confirm('정말 모든 사용자의 비밀번호를 1234로 재설정하시겠습니까?')">
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-arrow-clockwise me-1"></i>전체 재설정
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="card mb-4">
     <div class="card-header">
         <h5>
