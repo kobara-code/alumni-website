@@ -2,9 +2,12 @@ import sys
 import os
 
 # 프로젝트 루트를 Python 경로에 추가
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 
-from app import app
+# app 모듈 import
+from app import app as application
 
-# Vercel은 app 객체를 직접 사용
-# handler 함수가 아닌 app 객체를 export
+# Vercel이 찾을 수 있도록 app 변수로도 export
+app = application
